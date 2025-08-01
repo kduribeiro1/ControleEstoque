@@ -3,6 +3,7 @@ using System;
 using ControleEstoque;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ControleEstoque.Migrations
 {
     [DbContext(typeof(EstoqueContext))]
-    partial class EstoqueContextModelSnapshot : ModelSnapshot
+    [Migration("20250801050711_AddQtdeAvisoTipoUnd")]
+    partial class AddQtdeAvisoTipoUnd
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.7");
@@ -42,11 +45,74 @@ namespace ControleEstoque.Migrations
                     b.Property<int>("Quantidade")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("ValorTotal")
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ProdutoId");
 
                     b.ToTable("Estoques");
+                });
+
+            modelBuilder.Entity("ControleEstoque.ItemPedido", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("IdPedido")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("IdProduto")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("PedidoId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ProdutoId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Quantidade")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ValorTotal")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ValorUnitario")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PedidoId");
+
+                    b.HasIndex("ProdutoId");
+
+                    b.ToTable("ItensPedidos");
+                });
+
+            modelBuilder.Entity("ControleEstoque.Pedido", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Cliente")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("DataPedido")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("QtdeItens")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ValorTotal")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Pedidos");
                 });
 
             modelBuilder.Entity("ControleEstoque.Produto", b =>
@@ -60,10 +126,6 @@ namespace ControleEstoque.Migrations
 
                     b.Property<bool>("Ativo")
                         .HasColumnType("INTEGER");
-
-                    b.Property<string>("Descricao")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
 
                     b.Property<int>("IdTipoUnidade")
                         .HasColumnType("INTEGER");
@@ -113,6 +175,25 @@ namespace ControleEstoque.Migrations
                         .HasForeignKey("ProdutoId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Produto");
+                });
+
+            modelBuilder.Entity("ControleEstoque.ItemPedido", b =>
+                {
+                    b.HasOne("ControleEstoque.Pedido", "Pedido")
+                        .WithMany()
+                        .HasForeignKey("PedidoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ControleEstoque.Produto", "Produto")
+                        .WithMany()
+                        .HasForeignKey("ProdutoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Pedido");
 
                     b.Navigation("Produto");
                 });

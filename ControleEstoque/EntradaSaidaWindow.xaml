@@ -1,0 +1,84 @@
+﻿<Window x:Class="ControleEstoque.EntradaSaidaWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:ControleEstoque"
+        mc:Ignorable="d"
+        Title="Entrada/Saída de Estoque" Height="350" MinHeight="350" Width="550" MinWidth="550" WindowStartupLocation="CenterScreen">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="5" />
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="5" />
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="5" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="5" />
+            <RowDefinition Height="40" />
+            <RowDefinition Height="5" />
+            <RowDefinition Height="55" />
+            <RowDefinition Height="5" />
+            <RowDefinition Height="55" />
+            <RowDefinition Height="5" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="5" />
+            <RowDefinition Height="30" />
+            <RowDefinition Height="5" />
+        </Grid.RowDefinitions>
+        <Label Content="Entrada/Saída de Estoque" FontWeight="Bold" FontSize="16" Margin="5" Grid.Column="1" Grid.Row="1" Grid.ColumnSpan="3"/>
+        <Grid Grid.Column="1" Grid.Row="3">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="25" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <TextBlock Text="Produto:" Grid.Row="0" VerticalAlignment="Center" />
+            <ComboBox x:Name="cbProduto" DisplayMemberPath="Nome" SelectedValuePath="Id" SelectionChanged="CbProduto_SelectionChanged" Grid.Row="1" VerticalContentAlignment="Center" />
+        </Grid>
+        <Grid Grid.Column="3" Grid.Row="3">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="25" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <TextBlock x:Name="txtTituloQtde" Text="Quantidade:" Grid.Row="0" VerticalAlignment="Center" />
+            <TextBox x:Name="txtQuantidade" PreviewTextInput="TxtQuantidade_PreviewTextInput" DataObject.Pasting="TxtQuantidade_Pasting" Grid.Row="1" VerticalContentAlignment="Center" />
+        </Grid>
+        <Grid Grid.Column="1" Grid.Row="5">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="25" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="5" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="Data e Hora da Entrada/Saída:" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" VerticalAlignment="Center" />
+            <DatePicker x:Name="dpDataEntradaSaida" Grid.Row="1" Grid.Column="0" VerticalContentAlignment="Center" />
+            <TextBox x:Name="txtHoraEntradaSaida" MaxLength="5" Grid.Row="1" Grid.Column="2" ToolTip="Formato HH:mm" PreviewTextInput="TxtHoraEntradaSaida_PreviewTextInput"
+                LostFocus="TxtHoraEntradaSaida_LostFocus" VerticalContentAlignment="Center" />
+        </Grid>
+        <Grid Grid.Column="3" Grid.Row="5">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="25" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <TextBlock Text="Tipo de Movimento:" Grid.Row="0" VerticalAlignment="Center" />
+            <ComboBox x:Name="cbTipoMovimento" SelectedValuePath="Tag" Grid.Row="1" VerticalContentAlignment="Center">
+                <ComboBoxItem Content="Entrada" Tag="1" />
+                <ComboBoxItem Content="Saída" Tag="0" />
+            </ComboBox>
+        </Grid>
+        <Grid Grid.Column="1" Grid.ColumnSpan="3" Grid.Row="7">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="25" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <TextBlock Text="Observação:" Grid.Row="0" VerticalAlignment="Center" />
+            <TextBox x:Name="txtObservacao" AcceptsReturn="True" Grid.Row="1" />
+        </Grid>
+        <Button x:Name="btnFechar" Content="Fechar" Grid.Column="1" Grid.Row="9" Click="BtnFechar_Click"/>
+        <Button x:Name="btnSalvar" Content="Salvar" Grid.Column="3" Grid.Row="9" Click="BtnSalvar_Click"/>
+    </Grid>
+</Window>

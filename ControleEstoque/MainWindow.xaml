@@ -1,12 +1,89 @@
-﻿<Window x:Class="ControleEstoque.MainWindow"
+﻿<Window x:Name="window" x:Class="ControleEstoque.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ControleEstoque"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="Controle Estoque" Height="450" Width="800" WindowStartupLocation="CenterScreen">
     <Grid>
-
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="5" />
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="5" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="5" />
+            <RowDefinition Height="40" />
+            <RowDefinition Height="5" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="5" />
+            <RowDefinition Height="30" />
+            <RowDefinition Height="5" />
+        </Grid.RowDefinitions>
+        <Grid Grid.Column="1" Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="5" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="5" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="5" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Button x:Name="btnProdutos" Content="Produtos" Grid.Column="0" Click="BtnProdutos_Click" />
+            <Button x:Name="btnTipos" Content="Tipos de Unidades" Grid.Column="2" Height="40" VerticalAlignment="Top" Click="BtnTipos_Click" />
+            <Button x:Name="btnEstoque" Content="Historico de Estoque" Grid.Column="4" Click="BtnEstoque_Click" />
+            <Button x:Name="btnEntSaidEstoque" Content="Entrada/Saída Estoque" Grid.Column="6" Click="BtnEntSaidEstoque_Click" />
+        </Grid>
+        <Grid Grid.Column="1" Grid.Row="3">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="40" />
+                <RowDefinition Height="5" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Label Content="Produtos com estoque baixo:" FontWeight="Bold" FontSize="16" Grid.Row="0" VerticalContentAlignment="Bottom" />
+            <Grid Grid.Row="2" Margin="5">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="5" />
+                    <RowDefinition Height="40" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="5" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="5" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="5" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <ListView Name="listViewProdutosAcabando" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="7">
+                    <ListView.View>
+                        <GridView>
+                            <GridViewColumn Header="Id" Width="50" DisplayMemberBinding="{Binding Id}" />
+                            <GridViewColumn Header="Nome" DisplayMemberBinding="{Binding Nome}" />
+                            <GridViewColumn Header="Unidade" Width="100" DisplayMemberBinding="{Binding TipoUnidade}" />
+                            <GridViewColumn Header="Quantidade Total" Width="150" DisplayMemberBinding="{Binding QuantidadeTotal}" />
+                            <GridViewColumn Header="Quantidade Aviso" Width="150" DisplayMemberBinding="{Binding QuantidadeAviso}" />
+                        </GridView>
+                    </ListView.View>
+                </ListView>
+                <Label x:Name="txtQtdeProdutos" Content="Quantidade de Produtos com estoque baixo: " Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" VerticalContentAlignment="Center" />
+                <Button x:Name="btnAtualizarProdutos" Content="Atualizar Produtos" Click="BtnAtualizarProdutos_Click" Grid.Row="2" Grid.Column="4" />
+                <Button x:Name="btnExportarProdutos" Content="Exportar Produtos" Click="BtnExportarProdutos_Click" Grid.Row="2" Grid.Column="6" />
+            </Grid> 
+        </Grid>
+        <StatusBar x:Name="SttBarDataHora" Grid.Column="1" Grid.Row="5">
+            <StatusBarItem Width="100" Margin="10,0,5,0">
+                <TextBlock x:Name="txtHora" />
+            </StatusBarItem>
+            <StatusBarItem Width="300" Margin="5,0,5,0">
+                <TextBlock x:Name="txtData" />
+            </StatusBarItem>
+            <StatusBarItem HorizontalAlignment="Right" Margin="0,0,10,0">
+                <TextBlock x:Name="txtKRDG" Text="KRDG" />
+            </StatusBarItem>
+        </StatusBar>
     </Grid>
 </Window>
