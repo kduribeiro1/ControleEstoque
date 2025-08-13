@@ -31,12 +31,11 @@ namespace ControleEstoque
             try
             {
                 using var context = new EstoqueContext();
-                List<ProdutoCmbViewModel> produtos =
+                List<Produto> produtos =
                 [
-                    new ProdutoCmbViewModel { Id = null, Nome = "Todos os produtos", Unidade = string.Empty },
-                        .. context.Produtos
+                    new Produto { Id = 0, Nome = "Todos os produtos", TipoUnidade = new TipoUnidade() },
+                        .. context.Produtos.Include(p => p.TipoUnidade)
                             .Where(p => p.Ativo)
-                            .Select(p => new ProdutoCmbViewModel { Id = p.Id, Nome = p.Nome, Unidade = p.TipoUnidade.Nome })
                             .OrderBy(p => p.Nome).ToList(),
                     ];
                 cbProduto.ItemsSource = produtos;
@@ -52,8 +51,9 @@ namespace ControleEstoque
 
         private void BtnNovo_Click(object sender, RoutedEventArgs e)
         {
-            int? idproduto = (int?)cbProduto.SelectedValue;
-            if (idproduto == 0)
+            var produto = cbProduto.SelectedItem as Produto;
+            int? idproduto = produto?.Id;
+            if (idproduto < 1)
             {
                 idproduto = null;
             }
@@ -68,16 +68,16 @@ namespace ControleEstoque
         {
             try
             {
-                int? idProduto = (int?)cbProduto.SelectedValue;
+                var produto = cbProduto.SelectedItem as Produto;
                 using var db = new EstoqueContext();
                 var lista = db.Estoques
                     .Include(e => e.Produto)
                     .Include(e => e.Produto.TipoUnidade)
-                    .Where(e => idProduto == null || idProduto < 1 || e.IdProduto == (int)idProduto)
+                    .Where(e => produto == null || produto.Id < 1 || e.Produto.Id == produto.Id)
                     .Select(e => new EstoqueViewModel
                     {
                         Id = e.Id,
-                        IdProduto = e.IdProduto,
+                        IdProduto = e.Produto.Id,
                         NomeProduto = e.Produto.Nome,
                         Quantidade = e.Quantidade,
                         DataEntradaSaida = e.DataEntradaSaida,
@@ -132,14 +132,10 @@ namespace ControleEstoque
                     if (MessageBox.Show("Tem certeza que deseja deletar este item?", "Confirmação", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
                     {
                         using var context = new EstoqueContext();
-                        var estoque = context.Estoques.Find(idEstoque);
+                        var estoque = context.Estoques.Include(p => p.Produto).Where(p => p.Id == idEstoque).FirstOrDefault();
                         if (estoque != null)
                         {
-                            Produto? produtoEdt = null;
-                            using (var context2 = new EstoqueContext())
-                            {
-                                produtoEdt = context2.Produtos.FirstOrDefault(p => p.Id == estoque.IdProduto) ?? null;
-                            }
+                            Produto? produtoEdt = estoque.Produto;
 
                             if (produtoEdt != null)
                             {
@@ -214,7 +210,7 @@ namespace ControleEstoque
                     row.CreateCell(2).SetCellValue(estoque.NomeProduto);
                     row.CreateCell(3).SetCellValue(estoque.Unidade);
                     row.CreateCell(4).SetCellValue(estoque.TipoMovimento);
-                    row.CreateCell(5).SetCellValue(estoque.DataEntradaSaida);
+                    row.CreateCell(5).SetCellValue(estoque.DataEntradaSaida.ToString("dd/MM/yyyy HH:mm"));
                     row.CreateCell(6).SetCellValue(estoque.Quantidade);
                     row.CreateCell(7).SetCellValue(estoque.Observacao);
                 }
@@ -245,15 +241,20 @@ namespace ControleEstoque
         {
             try
             {
-                int? idProduto = (int?)cbProduto.SelectedValue;
+                var produto = cbProduto.SelectedItem as Produto;
+                int? idProduto = produto?.Id;
+                if (idProduto < 1)
+                {
+                    idProduto = null;
+                }
                 using var db = new EstoqueContext();
                 var lista = db.Estoques
                     .Include(e => e.Produto)
-                    .Where(e => idProduto == null || idProduto < 1 || e.IdProduto == (int)idProduto)
+                    .Where(e => idProduto == null || idProduto < 1 || e.Produto.Id == (int)idProduto)
                     .Select(e => new EstoqueViewModel
                     {
                         Id = e.Id,
-                        IdProduto = e.IdProduto,
+                        IdProduto = e.Produto.Id,
                         NomeProduto = e.Produto.Nome,
                         Quantidade = e.Quantidade,
                         DataEntradaSaida = e.DataEntradaSaida,

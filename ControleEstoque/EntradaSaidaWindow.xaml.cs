@@ -23,7 +23,8 @@ namespace ControleEstoque
     public partial class EntradaSaidaWindow : Window
     {
         private int IdEstoque { get; set; } = 0;
-        private Estoque? Estoque { get; set; } = new Estoque();
+        private Estoque Estoque { get; set; } = new Estoque();
+        private Produto? Produto { get; set; }
 
         public EntradaSaidaWindow(int? idProduto = null)
         {
@@ -33,12 +34,11 @@ namespace ControleEstoque
             try
             {
                 using var context = new EstoqueContext();
-                List<ProdutoCmbViewModel> produtos =
+                List<Produto> produtos =
                 [
-                    new ProdutoCmbViewModel { Id = null, Nome = "Selecione um produto", Unidade = string.Empty },
-                    .. context.Produtos
+                    new Produto { Id = 0, Nome = "Selecione um produto", TipoUnidade = null! },
+                    .. context.Produtos.Include(p => p.TipoUnidade)
                         .Where(p => p.Ativo)
-                        .Select(p => new ProdutoCmbViewModel { Id = p.Id, Nome = p.Nome, Unidade = p.TipoUnidade.Nome })
                         .OrderBy(p => p.Nome).ToList(),
                 ];
                 cbProduto.ItemsSource = produtos;
@@ -52,10 +52,11 @@ namespace ControleEstoque
             }
             if (idProduto.HasValue)
             {
-                cbProduto.SelectedValue = idProduto; 
-                if (cbProduto.SelectedItem is ProdutoCmbViewModel produto && produto.Unidade != null)
+                cbProduto.SelectedValue = idProduto;
+                Produto = cbProduto.SelectedItem as Produto;
+                if (Produto?.TipoUnidade?.Nome != null)
                 {
-                    txtTituloQtde.Text = $"Quantidade: ({produto.Unidade})";
+                    txtTituloQtde.Text = $"Quantidade: ({Produto.TipoUnidade.Nome})";
                 }
                 else
                 {
@@ -77,14 +78,13 @@ namespace ControleEstoque
             try
             {
                 using var context = new EstoqueContext();
-                List<ProdutoCmbViewModel> produtos =
+                List<Produto> produtos =
                 [
-                    new ProdutoCmbViewModel { Id = 0, Nome = "Selecione um produto", Unidade = string.Empty },
-                        .. context.Produtos
-                            .Where(p => p.Ativo)
-                            .Select(p => new ProdutoCmbViewModel { Id = p.Id, Nome = p.Nome, Unidade = p.TipoUnidade.Nome })
-                            .OrderBy(p => p.Nome).ToList(),
-                    ];
+                    new Produto { Id = 0, Nome = "Selecione um produto", TipoUnidade = null! },
+                    .. context.Produtos.Include(p => p.TipoUnidade)
+                        .Where(p => p.Ativo)
+                        .OrderBy(p => p.Nome).ToList(),
+                ];
                 cbProduto.ItemsSource = produtos;
                 cbProduto.DisplayMemberPath = "Nome";
                 cbProduto.SelectedValuePath = "Id";
@@ -95,19 +95,21 @@ namespace ControleEstoque
             }
             using (var context = new EstoqueContext())
             {
-                Estoque = context.Estoques.FirstOrDefault(e => e.Id == id);
-                if (Estoque != null)
+                var estoque = context.Estoques.Include(p => p.Produto).Include(c => c.Produto.TipoUnidade).FirstOrDefault(e => e.Id == id);
+                if (estoque != null)
                 {
+                    Produto = estoque.Produto;
+                    Estoque = estoque;
                     dpDataEntradaSaida.SelectedDate = Estoque.DataEntradaSaida;
                     txtHoraEntradaSaida.Text = Estoque.DataEntradaSaida.ToString("HH:mm");
-                    cbProduto.SelectedValue = Estoque.IdProduto;
+                    cbProduto.SelectedValue = Estoque.Produto.Id;
                     txtQuantidade.Text = Estoque.Quantidade.ToString();
                     cbTipoMovimento.SelectedValue = Estoque.Entrada ? "1" : "0";
                     txtObservacao.Text = Estoque.Observacao;
                     // Atualiza o título da quantidade com a unidade do produto selecionado
-                    if (cbProduto.SelectedItem is ProdutoCmbViewModel produto && produto.Unidade != null)
+                    if (Produto?.TipoUnidade?.Nome != null)
                     {
-                        txtTituloQtde.Text = $"Quantidade: ({produto.Unidade})";
+                        txtTituloQtde.Text = $"Quantidade: ({Produto.TipoUnidade.Nome})";
                     }
                     else
                     {
@@ -143,12 +145,17 @@ namespace ControleEstoque
 
         private void CbProduto_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (cbProduto.SelectedItem is ProdutoCmbViewModel produto && produto.Unidade != null)
+            if (cbProduto.SelectedItem is Produto produtoSelecionado && produtoSelecionado.Id > 0)
             {
-                txtTituloQtde.Text = $"Quantidade: ({produto.Unidade})";
+                Estoque.Produto = produtoSelecionado;
+                Produto = produtoSelecionado;
+                txtTituloQtde.Text = produtoSelecionado.TipoUnidade?.Nome != null
+                    ? $"Quantidade: ({produtoSelecionado.TipoUnidade.Nome})"
+                    : "Quantidade:";
             }
             else
             {
+                Estoque.Produto = null!;
                 txtTituloQtde.Text = "Quantidade:";
             }
         }
@@ -180,7 +187,13 @@ namespace ControleEstoque
         {
             try
             {
-                if (cbProduto.SelectedValue == null)
+                var produtoSelecionado = cbProduto.SelectedItem as Produto;
+                if (produtoSelecionado == null)
+                {
+                    MessageBox.Show("Selecione um produto.");
+                    return;
+                }
+                if (produtoSelecionado.Id < 1)
                 {
                     MessageBox.Show("Selecione um produto.");
                     return;
@@ -191,17 +204,23 @@ namespace ControleEstoque
                     txtHoraEntradaSaida.Focus();
                     return;
                 }
+                if (!int.TryParse(txtQuantidade.Text, out int quantidade) || quantidade < 0)
+                {
+                    MessageBox.Show("Informe uma quantidade válida.", "Quantidade inválida", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
                 if (IdEstoque > 0)
                 {
                     if (Estoque == null)
                     {
                         using var context1 = new EstoqueContext();
-                        Estoque = context1.Estoques.FirstOrDefault(e => e.Id == IdEstoque);
-                        if (Estoque == null)
+                        var estoque = context1.Estoques.FirstOrDefault(e => e.Id == IdEstoque);
+                        if (estoque == null)
                         {
                             MessageBox.Show("Registro não encontrado.");
                             return;
                         }
+                        Estoque = estoque;
                     }
 
                     DateTime data = dpDataEntradaSaida.SelectedDate ?? DateTime.UtcNow.AddHours(-3);
@@ -211,33 +230,25 @@ namespace ControleEstoque
 
                     DateTime dataHoraEntradaSaida = data.Date + hora;
 
+                    Estoque.Produto = produtoSelecionado;
                     Estoque.DataEntradaSaida = dataHoraEntradaSaida;
-                    Estoque.IdProduto = (int)cbProduto.SelectedValue;
                     Estoque.Quantidade = int.Parse(txtQuantidade.Text);
                     Estoque.Entrada = cbTipoMovimento.SelectedValue?.ToString() == "1";
                     Estoque.Observacao = txtObservacao.Text;
                     try
                     {
-                        Produto? produtoEdt = null;
-                        using (var context = new EstoqueContext())
-                        {
-                            produtoEdt = context.Produtos.FirstOrDefault(p => p.Id == Estoque.IdProduto) ?? null;
-                        }
                         using (var _context = new EstoqueContext())
                         {
-                            if (produtoEdt != null)
+                            if (Estoque.Entrada)
                             {
-                                if (Estoque.Entrada)
-                                {
-                                    produtoEdt.QuantidadeTotal += Estoque.Quantidade;
-                                }
-                                else
-                                {
-                                    produtoEdt.QuantidadeTotal -= Estoque.Quantidade;
-                                }
-                                produtoEdt.Alteracao = DateTime.Now;
-                                _context.Produtos.Update(produtoEdt);
+                                produtoSelecionado.QuantidadeTotal += Estoque.Quantidade;
                             }
+                            else
+                            {
+                                produtoSelecionado.QuantidadeTotal -= Estoque.Quantidade;
+                            }
+                            produtoSelecionado.Alteracao = DateTime.Now;
+                            _context.Produtos.Update(produtoSelecionado);
                             _context.Estoques.Update(Estoque);
                             _context.SaveChanges();
                         }
@@ -260,7 +271,7 @@ namespace ControleEstoque
 
                     Estoque = new Estoque
                     {
-                        IdProduto = (int)cbProduto.SelectedValue,
+                        Produto = produtoSelecionado,
                         Quantidade = int.Parse(txtQuantidade.Text),
                         DataEntradaSaida = dataHoraEntradaSaida,
                         Entrada = cbTipoMovimento.SelectedValue?.ToString() == "1",
@@ -268,27 +279,18 @@ namespace ControleEstoque
                     };
                     try
                     {
-                        Produto? produtoEdt = null;
-                        using (var context = new EstoqueContext())
-                        {
-                            produtoEdt = context.Produtos.FirstOrDefault(p => p.Id == Estoque.IdProduto) ?? null;
-                        }
-
                         using (var _context = new EstoqueContext())
                         {
-                            if (produtoEdt != null)
+                            if (Estoque.Entrada)
                             {
-                                if (Estoque.Entrada)
-                                {
-                                    produtoEdt.QuantidadeTotal += Estoque.Quantidade;
-                                }
-                                else
-                                {
-                                    produtoEdt.QuantidadeTotal -= Estoque.Quantidade;
-                                }
-                                produtoEdt.Alteracao = DateTime.Now;
-                                _context.Produtos.Update(produtoEdt);
+                                produtoSelecionado.QuantidadeTotal += Estoque.Quantidade;
                             }
+                            else
+                            {
+                                produtoSelecionado.QuantidadeTotal -= Estoque.Quantidade;
+                            }
+                            produtoSelecionado.Alteracao = DateTime.Now;
+                            _context.Produtos.Update(produtoSelecionado);
                             _context.Estoques.Add(Estoque);
                             _context.SaveChanges();
                         }

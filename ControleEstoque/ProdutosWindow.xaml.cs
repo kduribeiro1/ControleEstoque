@@ -1,4 +1,5 @@
-﻿using Microsoft.Win32;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Win32;
 using NPOI.XSSF.UserModel;
 using System;
 using System.Collections.Generic;
@@ -38,19 +39,19 @@ namespace ControleEstoque
             try
             {
                 using var db = new EstoqueContext();
-                var produtos = db.Produtos
+                var produtos = db.Produtos.Include(p => p.TipoUnidade)
                     .Where(p => p.Ativo)
                     .Select(p => new ProdutoViewModel
                     {
                         Id = p.Id,
                         Nome = p.Nome,
                         Unidade = p.TipoUnidade.Nome,
-                        PrecoUnidade = p.PrecoUnidade,
+                        PrecoUnidade = p.PrecoUnidade.ToString("F2"),
                         QuantidadeTotal = p.QuantidadeTotal,
                         Ativo = p.Ativo ? "Sim" : "Não",
                         Alteracao = p.Alteracao,
                         Descricao = p.Descricao ?? string.Empty,
-                        IdTipoUnidade = p.IdTipoUnidade
+                        IdTipoUnidade = p.TipoUnidade.Id
                     })
                     .Where(p => string.IsNullOrWhiteSpace(filtro) || p.Nome.Contains(filtro, StringComparison.OrdinalIgnoreCase))
                     .OrderBy(p => p.Nome)
@@ -88,7 +89,7 @@ namespace ControleEstoque
                 Produto? produto = null;
                 using (var db = new EstoqueContext())
                 {
-                    produto = db.Produtos.FirstOrDefault(p => p.Id == produtoSelecionado.Id);
+                    produto = db.Produtos.Include(p => p.TipoUnidade).FirstOrDefault(p => p.Id == produtoSelecionado.Id);
                 }
                 if (produto == null)
                 {
@@ -128,11 +129,19 @@ namespace ControleEstoque
                     if (MessageBox.Show("Tem certeza que deseja deletar este item?", "Confirmação", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
                     {
                         using var context = new EstoqueContext();
-                        var estoques = context.Estoques.Where(p => p.IdProduto == itemSelecionado.Id).ToList();
+                        var estoques = context.Estoques.Include(p => p.Produto).Where(p => p.Produto.Id == itemSelecionado.Id).ToList();
                         if (estoques.Any())
                         {
-                            MessageBox.Show("Não é possível deletar este produto porque existem estoques associados a ele.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
-                            return;
+                            if (MessageBox.Show("Este produto possui estoques associados. Deseja deletar inclusive os estoques?", "Confirmação", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+                            {
+                                context.Estoques.RemoveRange(estoques);
+                                context.SaveChanges();
+                            }
+                            else
+                            {
+                                MessageBox.Show("Produto não pode ser deletado pois possui estoques associados.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
+                                return;
+                            }
                         }
                         context.Produtos.Remove(produto);
                         context.SaveChanges();
@@ -155,19 +164,19 @@ namespace ControleEstoque
             try
             {
                 using var db = new EstoqueContext();
-                var produtos = db.Produtos
+                var produtos = db.Produtos.Include(p => p.TipoUnidade)
                     .Where(p => p.Ativo)
                     .Select(p => new ProdutoViewModel
                     {
                         Id = p.Id,
                         Nome = p.Nome,
                         Unidade = p.TipoUnidade.Nome,
-                        PrecoUnidade = p.PrecoUnidade,
+                        PrecoUnidade = p.PrecoUnidade.ToString("F2"),
                         QuantidadeTotal = p.QuantidadeTotal,
                         Ativo = p.Ativo ? "Sim" : "Não",
                         Alteracao = p.Alteracao,
                         Descricao = p.Descricao ?? string.Empty,
-                        IdTipoUnidade = p.IdTipoUnidade
+                        IdTipoUnidade = p.TipoUnidade.Id
                     })
                     .Where(p => string.IsNullOrWhiteSpace(txtFiltroNome.Text) || p.Nome.Contains(txtFiltroNome.Text, StringComparison.OrdinalIgnoreCase))
                     .OrderBy(p => p.Nome)
@@ -202,7 +211,7 @@ namespace ControleEstoque
                 var exampleRow = sheet.CreateRow(1);
                 exampleRow.CreateCell(0).SetCellValue("Produto Exemplo");
                 exampleRow.CreateCell(1).SetCellValue("Unidade Exemplo");
-                exampleRow.CreateCell(2).SetCellValue("10");
+                exampleRow.CreateCell(2).SetCellValue("10.00");
                 exampleRow.CreateCell(3).SetCellValue("100");
                 exampleRow.CreateCell(4).SetCellValue("Sim");
                 exampleRow.CreateCell(5).SetCellValue(DateTime.Now.ToString("dd/MM/yyyy HH:mm"));
@@ -260,8 +269,25 @@ namespace ControleEstoque
                     string alteracaoStr = row.GetCell(5)?.ToString() ?? "";
                     string descricao = row.GetCell(6)?.ToString() ?? "";
 
+                    if (precoUnidadeStr.IndexOf(',') >= 0 && precoUnidadeStr.IndexOf('.') >= 0)
+                    {
+                        if (precoUnidadeStr.IndexOf(',') < precoUnidadeStr.IndexOf('.'))
+                        {
+                            precoUnidadeStr = precoUnidadeStr.Replace(".","").Replace(',', '.'); // Converte vírgula para ponto
+                        }
+                    }
+                    else if (precoUnidadeStr.IndexOf(',') >= 0)
+                    {
+                        precoUnidadeStr = precoUnidadeStr.Replace(',', '.'); // Converte vírgula para ponto
+                    }
+
                     if (string.IsNullOrWhiteSpace(nome) || string.IsNullOrWhiteSpace(unidadeNome))
                         continue;
+
+                    if (db.Produtos.Where(db => db.Nome == nome).Any())
+                    {
+                        continue;
+                    }
 
                     // Busca ou cadastra o tipo de unidade
                     var tipoUnidade = db.TiposUnidades.FirstOrDefault(u => u.Nome == unidadeNome);
@@ -276,15 +302,20 @@ namespace ControleEstoque
                         db.SaveChanges();
                     }
 
-                    if (!int.TryParse(precoUnidadeStr, out int precoUnidade)) precoUnidade = 0;
+                    if (!decimal.TryParse(precoUnidadeStr, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal precoUnidade)) precoUnidade = 0;
                     if (!int.TryParse(quantidadeTotalStr, out int quantidadeTotal)) quantidadeTotal = 0;
+                    if (quantidadeTotal < 0) quantidadeTotal = 0; // Evita valores negativos
+                    if (precoUnidade < 0) precoUnidade = 0; // Evita valores negativos
+                    if (string.IsNullOrWhiteSpace(ativoStr)) ativoStr = "Sim"; // Valor padrão
+                    if (string.IsNullOrWhiteSpace(alteracaoStr)) alteracaoStr = DateTime.Now.ToString("dd/MM/yyyy HH:mm"); // Valor padrão
+
                     bool ativo = ativoStr.Equals("Sim", StringComparison.OrdinalIgnoreCase);
                     DateTime alteracao = DateTime.TryParse(alteracaoStr, out var dt) ? dt : DateTime.Now;
 
                     var produto = new Produto
                     {
                         Nome = nome,
-                        IdTipoUnidade = tipoUnidade.Id,
+                        TipoUnidade = tipoUnidade,
                         PrecoUnidade = precoUnidade,
                         QuantidadeTotal = quantidadeTotal,
                         Ativo = ativo,
@@ -300,7 +331,7 @@ namespace ControleEstoque
                     {
                         var estoque = new Estoque
                         {
-                            IdProduto = produto.Id,
+                            Produto = produto,
                             Quantidade = quantidadeTotal,
                             DataEntradaSaida = alteracao,
                             Entrada = true,

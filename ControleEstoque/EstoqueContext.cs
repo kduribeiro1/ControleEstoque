@@ -13,9 +13,8 @@ namespace ControleEstoque
     {
         public int Id { get; set; }
         public string Nome { get; set; } = string.Empty;
-        public int IdTipoUnidade { get; set; }
         public virtual TipoUnidade TipoUnidade { get; set; } = null!;
-        public int PrecoUnidade { get; set; }
+        public decimal PrecoUnidade { get; set; }
         public int QuantidadeTotal { get; set; }
         public bool Ativo { get; set; }
         public DateTime Alteracao { get; set; }
@@ -25,7 +24,6 @@ namespace ControleEstoque
     public class Estoque
     {
         public int Id { get; set; }
-        public int IdProduto { get; set; }
         public virtual Produto Produto { get; set; } = null!;
         public int Quantidade { get; set; }
         public DateTime DataEntradaSaida { get; set; }

@@ -93,6 +93,7 @@ namespace ControleEstoque
                     .ToList();
 
                 listViewProdutosAcabando.ItemsSource = produtosBaixoEstoque;
+                txtQtdeProdutos.Content = $"Quantidade de Produtos com estoque baixo: {produtosBaixoEstoque.Count}";
             }
             catch (Exception ex)
             {
@@ -105,62 +106,20 @@ namespace ControleEstoque
             EntradaSaidaWindow entradaSaidaWindow = new();
             if (entradaSaidaWindow.ShowDialog() == true)
             {
-                try
-                {
-                    using var db = new EstoqueContext();
-                    // Busca produtos cujo QuantidadeTotal <= QuantidadeAviso do TipoUnidade
-                    var produtosBaixoEstoque = db.Produtos
-                        .Include(p => p.TipoUnidade)
-                        .Where(p => p.QuantidadeTotal <= p.TipoUnidade.QuantidadeAviso)
-                        .Select(p => new ProdutoBaixoEstoque
-                        {
-                            Nome = p.Nome,
-                            TipoUnidade = p.TipoUnidade.Nome,
-                            QuantidadeTotal = p.QuantidadeTotal,
-                            QuantidadeAviso = p.TipoUnidade.QuantidadeAviso
-                        })
-                        .ToList();
-
-                    listViewProdutosAcabando.ItemsSource = produtosBaixoEstoque;
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Erro ao carregar produtos: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
+                CarregarProdutosAcabando();
             }
         }
 
         private void BtnAtualizarProdutos_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                using var db = new EstoqueContext();
-                // Busca produtos cujo QuantidadeTotal <= QuantidadeAviso do TipoUnidade
-                var produtosBaixoEstoque = db.Produtos
-                    .Include(p => p.TipoUnidade)
-                    .Where(p => p.QuantidadeTotal <= p.TipoUnidade.QuantidadeAviso)
-                    .Select(p => new ProdutoBaixoEstoque
-                    {
-                        Nome = p.Nome,
-                        TipoUnidade = p.TipoUnidade.Nome,
-                        QuantidadeTotal = p.QuantidadeTotal,
-                        QuantidadeAviso = p.TipoUnidade.QuantidadeAviso
-                    })
-                    .ToList();
-
-                listViewProdutosAcabando.ItemsSource = produtosBaixoEstoque;
-                MessageBox.Show("Produtos atualizados com sucesso!", "Sucesso", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Erro ao carregar produtos: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            CarregarProdutosAcabando();
         }
 
         private void BtnExportarProdutos_Click(object sender, RoutedEventArgs e)
         {
             try
             {
+                CarregarProdutosAcabando();
                 var produtos = listViewProdutosAcabando.ItemsSource as IEnumerable<ProdutoBaixoEstoque>;
                 if (produtos == null || !produtos.Any())
                 {
@@ -215,27 +174,7 @@ namespace ControleEstoque
             ProdutosWindow produtosWindow = new();
             if (produtosWindow.ShowDialog() == true)
             {
-                try
-                {
-                    using var db = new EstoqueContext();
-                    // Busca produtos cujo QuantidadeTotal <= QuantidadeAviso do TipoUnidade
-                    var produtosBaixoEstoque = db.Produtos
-                        .Include(p => p.TipoUnidade)
-                        .Where(p => p.QuantidadeTotal <= p.TipoUnidade.QuantidadeAviso)
-                        .Select(p => new ProdutoBaixoEstoque
-                        {
-                            Nome = p.Nome,
-                            TipoUnidade = p.TipoUnidade.Nome,
-                            QuantidadeTotal = p.QuantidadeTotal,
-                            QuantidadeAviso = p.TipoUnidade.QuantidadeAviso
-                        })
-                        .ToList();
-                    listViewProdutosAcabando.ItemsSource = produtosBaixoEstoque;
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Erro ao carregar produtos: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
+                CarregarProdutosAcabando();
             }
         }
 
@@ -244,27 +183,7 @@ namespace ControleEstoque
             TiposUndsWindow tiposUndsWindow = new();
             if (tiposUndsWindow.ShowDialog() == true)
             {
-                try
-                {
-                    using var db = new EstoqueContext();
-                    // Busca produtos cujo QuantidadeTotal <= QuantidadeAviso do TipoUnidade
-                    var produtosBaixoEstoque = db.Produtos
-                        .Include(p => p.TipoUnidade)
-                        .Where(p => p.QuantidadeTotal <= p.TipoUnidade.QuantidadeAviso)
-                        .Select(p => new ProdutoBaixoEstoque
-                        {
-                            Nome = p.Nome,
-                            TipoUnidade = p.TipoUnidade.Nome,
-                            QuantidadeTotal = p.QuantidadeTotal,
-                            QuantidadeAviso = p.TipoUnidade.QuantidadeAviso
-                        })
-                        .ToList();
-                    listViewProdutosAcabando.ItemsSource = produtosBaixoEstoque;
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Erro ao carregar produtos: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
+                CarregarProdutosAcabando();
             }
         }
 
@@ -273,27 +192,7 @@ namespace ControleEstoque
             EstoqueWindow estoqueWindow = new();
             if (estoqueWindow.ShowDialog() == true)
             {
-                try
-                {
-                    using var db = new EstoqueContext();
-                    // Busca produtos cujo QuantidadeTotal <= QuantidadeAviso do TipoUnidade
-                    var produtosBaixoEstoque = db.Produtos
-                        .Include(p => p.TipoUnidade)
-                        .Where(p => p.QuantidadeTotal <= p.TipoUnidade.QuantidadeAviso)
-                        .Select(p => new ProdutoBaixoEstoque
-                        {
-                            Nome = p.Nome,
-                            TipoUnidade = p.TipoUnidade.Nome,
-                            QuantidadeTotal = p.QuantidadeTotal,
-                            QuantidadeAviso = p.TipoUnidade.QuantidadeAviso
-                        })
-                        .ToList();
-                    listViewProdutosAcabando.ItemsSource = produtosBaixoEstoque;
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Erro ao carregar produtos: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
+                CarregarProdutosAcabando();
             }
         }
     }

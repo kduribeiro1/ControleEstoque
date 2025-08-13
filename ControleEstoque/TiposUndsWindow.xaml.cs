@@ -1,4 +1,5 @@
-﻿using Microsoft.Win32;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Win32;
 using NPOI.XSSF.UserModel;
 using System;
 using System.Collections.Generic;
@@ -25,6 +26,7 @@ namespace ControleEstoque
         public TiposUndsWindow()
         {
             InitializeComponent();
+            CarregarTiposUnidades();
             txtFiltroNome.TextChanged += (s, e) => CarregarTiposUnidades(txtFiltroNome.Text);
         }
 
@@ -88,7 +90,7 @@ namespace ControleEstoque
                     if (MessageBox.Show("Tem certeza que deseja deletar este item?", "Confirmação", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
                     {
                         using var context = new EstoqueContext();
-                        var produtos = context.Produtos.Where(p => p.IdTipoUnidade == itemSelecionado.Id).ToList();
+                        var produtos = context.Produtos.Include(p => p.TipoUnidade).Where(p => p.TipoUnidade.Id == itemSelecionado.Id).ToList();
                         if (produtos.Any())
                         {
                             MessageBox.Show("Não é possível deletar este tipo de unidade porque existem produtos associados a ele.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);

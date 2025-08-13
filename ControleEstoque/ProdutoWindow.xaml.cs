@@ -11,6 +11,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using System.Text.RegularExpressions;
 
 namespace ControleEstoque
 {
@@ -45,8 +46,8 @@ namespace ControleEstoque
             try
             {
                 using var db = new EstoqueContext();
-                List<TipoUnidadeCbmViewModel> lista = [new TipoUnidadeCbmViewModel() { Id = null, Nome = "Selecione uma unidade" },
-                    .. db.TiposUnidades.Select(u => new TipoUnidadeCbmViewModel() { Id = u.Id, Nome = u.Nome }).OrderBy(u => u.Nome).ToList()
+                List<TipoUnidade> lista = [new TipoUnidade() { Id = 0, Nome = "Selecione uma unidade" },
+                    .. db.TiposUnidades.Select(u => new TipoUnidade() { Id = u.Id, Nome = u.Nome }).OrderBy(u => u.Nome).ToList()
                 ];
                 cbUnidade.ItemsSource = lista;
                 cbUnidade.DisplayMemberPath = "Nome";
@@ -62,23 +63,48 @@ namespace ControleEstoque
         private void PreencherCampos(Produto produto)
         {
             txtNome.Text = produto.Nome;
-            cbUnidade.SelectedValue = produto.IdTipoUnidade;
-            txtPrecoUnidade.Text = produto.PrecoUnidade.ToString();
+            cbUnidade.SelectedValue = produto.TipoUnidade.Id;
+            txtPrecoUnidade.Text = produto.PrecoUnidade.ToString("F2");
             lblQuantidadeTotal.Content = produto.QuantidadeTotal.ToString();
             chkAtivo.IsChecked = produto.Ativo;
             lblAlteracao.Content = produto.Alteracao.ToString("dd/MM/yyyy HH:mm");
+            txtDescricao.Text = produto.Descricao;
         }
 
         private void BtnSalvar_Click(object sender, RoutedEventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(txtNome.Text) ||
-                cbUnidade.SelectedValue == null)
+            if (string.IsNullOrWhiteSpace(txtNome.Text))
             {
-                MessageBox.Show("Preencha todos os campos obrigatórios.", "Atenção", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Digite o nome do produto.", "Atenção", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            var tipoUnidadeSelecionado = cbUnidade.SelectedItem as TipoUnidade;
+            if (tipoUnidadeSelecionado == null)
+            {
+                MessageBox.Show("Selecione uma unidade de medida.", "Atenção", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            if (tipoUnidadeSelecionado.Id < 1) {
+                MessageBox.Show("Selecione uma unidade de medida válida.", "Atenção", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
-            if (!int.TryParse(txtPrecoUnidade.Text, out int precoUnidade))
+            string precoUnidadeStr = txtPrecoUnidade.Text?.Trim() ?? "";
+
+
+            if (precoUnidadeStr.IndexOf(',') >= 0 && precoUnidadeStr.IndexOf('.') >= 0)
+            {
+                if (precoUnidadeStr.IndexOf(',') < precoUnidadeStr.IndexOf('.'))
+                {
+                    precoUnidadeStr = precoUnidadeStr.Replace(".", "").Replace(',', '.'); // Converte vírgula para ponto
+                }
+            }
+            else if (precoUnidadeStr.IndexOf(',') >= 0)
+            {
+                precoUnidadeStr = precoUnidadeStr.Replace(',', '.'); // Converte vírgula para ponto
+            }
+
+            if (!decimal.TryParse(precoUnidadeStr, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal precoUnidade))
             {
                 precoUnidade = 0;
             }
@@ -93,7 +119,8 @@ namespace ControleEstoque
                     var produto = new Produto
                     {
                         Nome = txtNome.Text.Trim(),
-                        IdTipoUnidade = (int)cbUnidade.SelectedValue,
+                        Descricao = txtDescricao.Text.Trim(),
+                        TipoUnidade = tipoUnidadeSelecionado,
                         PrecoUnidade = precoUnidade,
                         QuantidadeTotal = 0,
                         Ativo = chkAtivo.IsChecked ?? false,
@@ -111,10 +138,11 @@ namespace ControleEstoque
                         return;
                     }
                     produto.Nome = txtNome.Text.Trim();
-                    produto.IdTipoUnidade = (int)cbUnidade.SelectedValue;
                     produto.PrecoUnidade = precoUnidade;
                     produto.Ativo = chkAtivo.IsChecked ?? false;
                     produto.Alteracao = DateTime.UtcNow.AddHours(-3);
+                    produto.Descricao = txtDescricao.Text.Trim();
+                    produto.TipoUnidade = tipoUnidadeSelecionado;
                 }
 
                 db.SaveChanges();
@@ -136,7 +164,8 @@ namespace ControleEstoque
 
         private void TxtPrecoUnidade_PreviewTextInput(object sender, TextCompositionEventArgs e)
         {
-            e.Handled = !int.TryParse(e.Text, out _);
+            Regex regex = new Regex(@"^[0-9.,]+$");
+            e.Handled = !regex.IsMatch(e.Text);
         }
     }
 }
