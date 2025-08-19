@@ -19,35 +19,34 @@ using System.Windows.Shapes;
 namespace ControleEstoque
 {
     /// <summary>
-    /// Lógica interna para TiposUndsWindow.xaml
+    /// Lógica interna para FornecedoresWindow.xaml
     /// </summary>
-    public partial class TiposUndsWindow : Window
+    public partial class FornecedoresWindow : Window
     {
-        public TiposUndsWindow()
+        public FornecedoresWindow()
         {
             InitializeComponent();
-            txtFiltroNome.Text = string.Empty; // Limpa o filtro ao iniciar
-            txtFiltroNome.TextChanged += (s, e) => CarregarTiposUnidades(txtFiltroNome.Text);
-            CarregarTiposUnidades();
+            CarregarFornecedores();
+            txtFiltroNome.TextChanged += (s, e) => CarregarFornecedores(txtFiltroNome.Text);
         }
 
         private void BtnNovo_Click(object sender, RoutedEventArgs e)
         {
-            TipoUnidadeWindow tipoUnidadeWindow = new();
-            if (tipoUnidadeWindow.ShowDialog() == true)
+            FornecedorWindow fornecedorWindow = new();
+            if (fornecedorWindow.ShowDialog() == true)
             {
-                CarregarTiposUnidades(txtFiltroNome.Text);
+                CarregarFornecedores(txtFiltroNome.Text);
             }
         }
-        private void CarregarTiposUnidades(string filtro = "")
+        private void CarregarFornecedores(string filtro = "")
         {
             try
             {
-                lstTiposUnidades.ItemsSource = EstoqueEntityManager.ObterTiposUnidadesPorNome(filtro);
+                lstFornecedores.ItemsSource = EstoqueEntityManager.ObterFornecedores(null).Select(f => new FornecedorViewModel(f)).ToList();
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Erro ao carregar tipos de unidade: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Erro ao carregar fornecedores: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -55,17 +54,17 @@ namespace ControleEstoque
         {
             try
             {
-                var tipoUnidadeSelecionada = lstTiposUnidades.SelectedItem as TipoUnidade;
-                if (tipoUnidadeSelecionada == null)
+                var fornecedorSelecionada = lstFornecedores.SelectedItem as FornecedorViewModel;
+                if (fornecedorSelecionada == null)
                 {
-                    MessageBox.Show("Selecione um tipo de unidade para editar.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBox.Show("Selecione um fornecedor para editar.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
 
-                TipoUnidadeWindow tipoUnidadeWindow = new(tipoUnidadeSelecionada);
-                if (tipoUnidadeWindow.ShowDialog() == true)
+                FornecedorWindow fornecedorWindow = new(fornecedorSelecionada.ToFornecedor());
+                if (fornecedorWindow.ShowDialog() == true)
                 {
-                    CarregarTiposUnidades(txtFiltroNome.Text);
+                    CarregarFornecedores(txtFiltroNome.Text);
                 }
             }
             catch (Exception ex)
@@ -78,15 +77,15 @@ namespace ControleEstoque
         {
             try
             {
-                TipoUnidade? itemSelecionado = lstTiposUnidades.SelectedItem as TipoUnidade;
+                FornecedorViewModel? itemSelecionado = lstFornecedores.SelectedItem as FornecedorViewModel;
                 if (itemSelecionado != null)
                 {
                     if (MessageBox.Show("Tem certeza que deseja deletar este item?", "Confirmação", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
                     {
-                        if (EstoqueEntityManager.DeletarTipoUnidade(itemSelecionado))
+                        if (EstoqueEntityManager.DeletarFornecedor(itemSelecionado.ToFornecedor()))
                         {
-                            MessageBox.Show("Tipo de unidade deletado com sucesso.", "Sucesso", MessageBoxButton.OK, MessageBoxImage.Information);
-                            CarregarTiposUnidades(txtFiltroNome.Text);
+                            MessageBox.Show("Fornecedor deletado com sucesso.", "Sucesso", MessageBoxButton.OK, MessageBoxImage.Information);
+                            CarregarFornecedores(txtFiltroNome.Text);
                         }
                     }
                 }
@@ -97,7 +96,7 @@ namespace ControleEstoque
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Erro ao deletar tipo de unidade: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Erro ao deletar fornecedor: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -105,12 +104,12 @@ namespace ControleEstoque
         {
             try
             {
-                CarregarTiposUnidades(txtFiltroNome.Text);
-                MessageBox.Show("Lista de tipos de unidade atualizada com sucesso.", "Sucesso", MessageBoxButton.OK, MessageBoxImage.Information);
+                CarregarFornecedores(txtFiltroNome.Text);
+                MessageBox.Show("Lista de fornecedores atualizada com sucesso.", "Sucesso", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Erro ao carregar tipos de unidade: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Erro ao carregar fornecedores: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -124,10 +123,10 @@ namespace ControleEstoque
 
             try
             {
-                var tipos = lstTiposUnidades.ItemsSource as IEnumerable<TipoUnidade>;
+                var tipos = lstFornecedores.ItemsSource as IEnumerable<FornecedorViewModel>;
                 if (tipos == null || !tipos.Any())
                 {
-                    MessageBox.Show("Não há tipos de unidade para exportar.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show("Não há fornecedores para exportar.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Information);
                     return;
                 }
 
@@ -138,7 +137,7 @@ namespace ControleEstoque
                 var headerRow = sheet.CreateRow(0);
                 headerRow.CreateCell(0).SetCellValue("Id");
                 headerRow.CreateCell(1).SetCellValue("Nome");
-                headerRow.CreateCell(2).SetCellValue("Quantidade Mínima");
+                headerRow.CreateCell(2).SetCellValue("Ativo");
 
                 int rowIndex = 1;
                 foreach (var tipo in tipos)
@@ -146,13 +145,13 @@ namespace ControleEstoque
                     var row = sheet.CreateRow(rowIndex++);
                     row.CreateCell(0).SetCellValue(tipo.Id);
                     row.CreateCell(1).SetCellValue(tipo.Nome);
-                    row.CreateCell(2).SetCellValue(tipo.QuantidadeMinima);
+                    row.CreateCell(2).SetCellValue(tipo.Ativo);
                 }
 
                 var saveFileDialog = new SaveFileDialog
                 {
                     Filter = "Arquivo Excel (*.xlsx)|*.xlsx",
-                    FileName = "TiposUnidades.xlsx"
+                    FileName = "Fornecedores.xlsx"
                 };
 
                 if (saveFileDialog.ShowDialog() == true)
@@ -166,7 +165,7 @@ namespace ControleEstoque
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Erro ao exportar tipos de unidade: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Erro ao exportar fornecedores: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }

@@ -20,21 +20,17 @@ namespace ControleEstoque
     /// Interaction logic for MainWindow.xaml
     /// </summary>
     
-    public class ProdutoBaixoEstoque
-    {
-        public string Nome { get; set; } = string.Empty;
-        public string TipoUnidade { get; set; } = string.Empty;
-        public int QuantidadeTotal { get; set; }
-        public int QuantidadeAviso { get; set; }
-    }
-
     public partial class MainWindow : Window
     {
         private readonly DispatcherTimer timer;
+        private int? _fornecedorId; 
+        private bool _atualizandoTabs = false;
 
         public MainWindow()
         {
             InitializeComponent();
+            _fornecedorId = null; // Inicializa o fornecedorId como nulo
+            CarregarFornecedoresTabs();
             CarregarProdutosAcabando();
             timer = new DispatcherTimer
             {
@@ -74,26 +70,73 @@ namespace ControleEstoque
             txtHora.Text = DateTime.UtcNow.AddHours(-3).ToString("HH:mm:ss");
         }
 
+        private void TabFornecedores_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_atualizandoTabs)
+                return; // Ignora evento durante atualização das abas
+
+            var item = tabFornecedores.SelectedItem as TabItem;
+            if (item != null)
+            {
+                _fornecedorId = item.Tag as int?;
+            }
+            else
+            {
+                _fornecedorId = null;
+            }
+            CarregarProdutosAcabando();
+        }
+
+        private void CarregarFornecedoresTabs()
+        {
+            _atualizandoTabs = true; // Inicia trava
+
+            var fornecedores = EstoqueEntityManager.ObterFornecedores();
+
+            tabFornecedores.Items.Clear();
+
+            // Aba "Todos"
+            var tabTodos = new TabItem { Header = "Todos", Tag = null };
+            tabFornecedores.Items.Add(tabTodos);
+
+            foreach (var fornecedor in fornecedores)
+            {
+                var tab = new TabItem { Header = fornecedor.Nome, Tag = fornecedor.Id };
+                tabFornecedores.Items.Add(tab);
+            }
+            if (_fornecedorId == null)
+            {
+                // Seleciona a aba "Todos" se nenhum fornecedor estiver selecionado
+                tabFornecedores.SelectedIndex = 0;
+            }
+            else
+            {
+                // Seleciona a aba do fornecedor específico
+                var tabSelecionada = tabFornecedores.Items.Cast<TabItem>().FirstOrDefault(t => (int?)t.Tag == _fornecedorId);
+                if (tabSelecionada != null)
+                {
+                    tabFornecedores.SelectedItem = tabSelecionada;
+                }
+                else
+                {
+                    // Se o fornecedor não estiver na lista, seleciona a aba "Todos"
+                    tabFornecedores.SelectedIndex = 0;
+                }
+            }
+            _atualizandoTabs = false; // Libera trava
+        }
+
         private void CarregarProdutosAcabando()
         {
             try
             {
-                using var db = new EstoqueContext();
-                // Busca produtos cujo QuantidadeTotal <= QuantidadeAviso do TipoUnidade
-                var produtosBaixoEstoque = db.Produtos
-                    .Include(p => p.TipoUnidade)
-                    .Where(p => p.QuantidadeTotal <= p.TipoUnidade.QuantidadeAviso)
-                    .Select(p => new ProdutoBaixoEstoque
-                    {
-                        Nome = p.Nome,
-                        TipoUnidade = p.TipoUnidade.Nome,
-                        QuantidadeTotal = p.QuantidadeTotal,
-                        QuantidadeAviso = p.TipoUnidade.QuantidadeAviso
-                    })
+                var produtosBaixoEstoque = EstoqueEntityManager.ObterProdutosPorFornecedorOrdemAcabando(_fornecedorId)
+                    .Select(p => new ProdutoViewModel(p))
+                    .OrderBy(p => p.QuantidadeTotal)
                     .ToList();
 
                 listViewProdutosAcabando.ItemsSource = produtosBaixoEstoque;
-                txtQtdeProdutos.Content = $"Quantidade de Produtos com estoque baixo: {produtosBaixoEstoque.Count}";
+                txtQtdeProdutos.Content = $"Quantidade de Produtos: {produtosBaixoEstoque.Count}";
             }
             catch (Exception ex)
             {
@@ -103,11 +146,9 @@ namespace ControleEstoque
 
         private void BtnEntSaidEstoque_Click(object sender, RoutedEventArgs e)
         {
-            EntradaSaidaWindow entradaSaidaWindow = new();
-            if (entradaSaidaWindow.ShowDialog() == true)
-            {
-                CarregarProdutosAcabando();
-            }
+            EntradaSaidaWindow entradaSaidaWindow = new(_fornecedorId, null);
+            entradaSaidaWindow.ShowDialog();
+            CarregarProdutosAcabando();
         }
 
         private void BtnAtualizarProdutos_Click(object sender, RoutedEventArgs e)
@@ -120,7 +161,7 @@ namespace ControleEstoque
             try
             {
                 CarregarProdutosAcabando();
-                var produtos = listViewProdutosAcabando.ItemsSource as IEnumerable<ProdutoBaixoEstoque>;
+                var produtos = listViewProdutosAcabando.ItemsSource as IEnumerable<ProdutoViewModel>;
                 if (produtos == null || !produtos.Any())
                 {
                     MessageBox.Show("Não há produtos para exportar.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -132,19 +173,38 @@ namespace ControleEstoque
 
                 // Cabeçalho
                 var headerRow = sheet.CreateRow(0);
-                headerRow.CreateCell(0).SetCellValue("Nome");
-                headerRow.CreateCell(1).SetCellValue("Unidade");
-                headerRow.CreateCell(2).SetCellValue("Quantidade Total");
-                headerRow.CreateCell(3).SetCellValue("Quantidade Aviso");
+                headerRow.CreateCell(0).SetCellValue("Id");
+                headerRow.CreateCell(1).SetCellValue("Código");
+                headerRow.CreateCell(2).SetCellValue("Modelo");
+                headerRow.CreateCell(3).SetCellValue("Fio");
+                headerRow.CreateCell(4).SetCellValue("Milímetros");
+                headerRow.CreateCell(5).SetCellValue("Tamanho");
+                headerRow.CreateCell(6).SetCellValue("Fornecedor");
+                headerRow.CreateCell(7).SetCellValue("Unidade");
+                headerRow.CreateCell(8).SetCellValue("Quantidade Total");
+                headerRow.CreateCell(9).SetCellValue("Quantidade Mínima");
+                headerRow.CreateCell(10).SetCellValue("Ativo");
+                headerRow.CreateCell(11).SetCellValue("Alteração");
+                headerRow.CreateCell(12).SetCellValue("Descrição");
+
 
                 int rowIndex = 1;
                 foreach (var produto in produtos)
                 {
                     var row = sheet.CreateRow(rowIndex++);
-                    row.CreateCell(0).SetCellValue(produto.Nome);
-                    row.CreateCell(1).SetCellValue(produto.TipoUnidade);
-                    row.CreateCell(2).SetCellValue(produto.QuantidadeTotal);
-                    row.CreateCell(3).SetCellValue(produto.QuantidadeAviso);
+                    row.CreateCell(0).SetCellValue(produto.Id);
+                    row.CreateCell(1).SetCellValue(produto.Codigo);
+                    row.CreateCell(2).SetCellValue(produto.Modelo);
+                    row.CreateCell(3).SetCellValue(produto.Fio);
+                    row.CreateCell(4).SetCellValue(produto.Milimetros);
+                    row.CreateCell(5).SetCellValue(produto.Tamanho);
+                    row.CreateCell(6).SetCellValue(produto.FornecedorNome);
+                    row.CreateCell(7).SetCellValue(produto.TipoUnidadeNome);
+                    row.CreateCell(8).SetCellValue(produto.QuantidadeTotal);
+                    row.CreateCell(9).SetCellValue(produto.QuantidadeMinima);
+                    row.CreateCell(10).SetCellValue(produto.Ativo);
+                    row.CreateCell(11).SetCellValue(produto.Alteracao.ToString("dd/MM/yyyy HH:mm"));
+                    row.CreateCell(12).SetCellValue(produto.Descricao);
                 }
 
                 // Diálogo para salvar arquivo
@@ -169,31 +229,33 @@ namespace ControleEstoque
             }
         }
 
+        private void BtnFornecedores_Click(object sender, RoutedEventArgs e)
+        {
+            FornecedoresWindow fornecedoresWindow = new();
+            fornecedoresWindow.ShowDialog();
+            CarregarFornecedoresTabs();
+            CarregarProdutosAcabando();
+        }
+
         private void BtnProdutos_Click(object sender, RoutedEventArgs e)
         {
-            ProdutosWindow produtosWindow = new();
-            if (produtosWindow.ShowDialog() == true)
-            {
-                CarregarProdutosAcabando();
-            }
+            ProdutosWindow produtosWindow = new(_fornecedorId);
+            produtosWindow.ShowDialog();
+            CarregarProdutosAcabando();
         }
 
         private void BtnTipos_Click(object sender, RoutedEventArgs e)
         {
             TiposUndsWindow tiposUndsWindow = new();
-            if (tiposUndsWindow.ShowDialog() == true)
-            {
-                CarregarProdutosAcabando();
-            }
+            tiposUndsWindow.ShowDialog();
+            CarregarProdutosAcabando();
         }
 
         private void BtnEstoque_Click(object sender, RoutedEventArgs e)
         {
-            EstoqueWindow estoqueWindow = new();
-            if (estoqueWindow.ShowDialog() == true)
-            {
-                CarregarProdutosAcabando();
-            }
+            EstoqueWindow estoqueWindow = new(_fornecedorId);
+            estoqueWindow.ShowDialog();
+            CarregarProdutosAcabando();
         }
     }
 }

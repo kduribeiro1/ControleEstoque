@@ -11,6 +11,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using System.Text.RegularExpressions;
 
 namespace ControleEstoque
 {
@@ -27,6 +28,7 @@ namespace ControleEstoque
             InitializeComponent();
             this.Title = "Cadastro de Tipo de Unidade";
             lblTitulo.Content = "Cadastro de Tipo de Unidade";
+            DataObject.AddPastingHandler(txtQtdeAviso, TxtQtdeAviso_Pasting);
         }
 
         // Construtor para edição
@@ -41,7 +43,7 @@ namespace ControleEstoque
         private void PreencherCampos(TipoUnidade tipoUnidade)
         {
             txtNome.Text = tipoUnidade.Nome;
-            txtQtdeAviso.Text = tipoUnidade.QuantidadeAviso.ToString();
+            txtQtdeAviso.Text = tipoUnidade.QuantidadeMinima.ToString();
         }
 
         private void BtnSalvar_Click(object sender, RoutedEventArgs e)
@@ -52,47 +54,42 @@ namespace ControleEstoque
                 return;
             }
 
-            if (!int.TryParse(txtQtdeAviso.Text, out int qtdeAviso))
+            int qtdeAviso = 0;
+            if (!string.IsNullOrWhiteSpace(txtQtdeAviso.Text))
             {
-                qtdeAviso = 0;
+                if (!int.TryParse(txtQtdeAviso.Text, out qtdeAviso) || qtdeAviso < 0)
+                {
+                    MessageBox.Show("Informe um valor inteiro maior ou igual a zero para quantidade de aviso.", "Atenção", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
             }
 
             try
             {
-                using var db = new EstoqueContext();
-
-                if (_tipoUnidadeEditando == null)
+                TipoUnidade? tipoUnidade = new();
+                if (_tipoUnidadeEditando != null)
                 {
-                    // Novo tipo de unidade
-                    var tipoUnidade = new TipoUnidade
-                    {
-                        Nome = txtNome.Text.Trim(),
-                        QuantidadeAviso = qtdeAviso
-                    };
-                    db.TiposUnidades.Add(tipoUnidade);
+                    tipoUnidade = EstoqueEntityManager.ObterTipoUnidadePorId(_tipoUnidadeEditando.Id);
                 }
-                else
+                if (tipoUnidade == null)
                 {
-                    // Editar tipo unidade existente
-                    var tipoUnidade = db.TiposUnidades.Find(_tipoUnidadeEditando.Id);
-                    if (tipoUnidade == null)
-                    {
-                        MessageBox.Show("Tipo Unidade não encontrado.", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
-                        return;
-                    }
-                    tipoUnidade.Nome = txtNome.Text.Trim();
-                    tipoUnidade.QuantidadeAviso = qtdeAviso;
+                    MessageBox.Show("Tipo de Unidade não encontrado.", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
                 }
 
-                db.SaveChanges();
-
-                MessageBox.Show("Tipo Unidade salvo com sucesso!", "Sucesso", MessageBoxButton.OK, MessageBoxImage.Information);
+                tipoUnidade.Nome = txtNome.Text.Trim();
+                tipoUnidade.QuantidadeMinima = qtdeAviso;
+                if (!EstoqueEntityManager.LancarTipoUnidade(tipoUnidade))
+                {
+                    return;
+                }
+                MessageBox.Show("Tipo de Unidade salvo com sucesso!", "Sucesso", MessageBoxButton.OK, MessageBoxImage.Information);
                 DialogResult = true;
                 Close();
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Erro ao salvar tipo unidade: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Erro ao salvar o tipo de unidade: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -103,7 +100,22 @@ namespace ControleEstoque
 
         private void TxtQtdeAviso_PreviewTextInput(object sender, TextCompositionEventArgs e)
         {
-            e.Handled = !int.TryParse(e.Text, out _);
+            // Permite apenas dígitos (0-9)
+            e.Handled = !Regex.IsMatch(e.Text, @"^\d+$");
+        }
+
+        private void TxtQtdeAviso_Pasting(object sender, DataObjectPastingEventArgs e)
+        {
+            if (e.DataObject.GetDataPresent(typeof(string)))
+            {
+                string texto = (string)e.DataObject.GetData(typeof(string));
+                if (!Regex.IsMatch(texto, @"^\d*$")) // Permite vazio ou só dígitos
+                    e.CancelCommand();
+            }
+            else
+            {
+                e.CancelCommand();
+            }
         }
     }
 }

@@ -3,6 +3,7 @@ using System;
 using ControleEstoque;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ControleEstoque.Migrations
 {
     [DbContext(typeof(EstoqueContext))]
-    partial class EstoqueContextModelSnapshot : ModelSnapshot
+    [Migration("20250813192920_ColunasRefId")]
+    partial class ColunasRefId
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.7");
@@ -46,28 +49,6 @@ namespace ControleEstoque.Migrations
                     b.ToTable("Estoques");
                 });
 
-            modelBuilder.Entity("ControleEstoque.Fornecedor", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("Ativo")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Descricao")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Nome")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Fornecedores");
-                });
-
             modelBuilder.Entity("ControleEstoque.Produto", b =>
                 {
                     b.Property<int>("Id")
@@ -80,45 +61,24 @@ namespace ControleEstoque.Migrations
                     b.Property<bool>("Ativo")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("Codigo")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("Descricao")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Fio")
+                    b.Property<string>("Nome")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("FornecedorId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Milimetros")
-                        .IsRequired()
+                    b.Property<decimal>("PrecoUnidade")
                         .HasColumnType("TEXT");
-
-                    b.Property<string>("Modelo")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("QuantidadeMinima")
-                        .HasColumnType("INTEGER");
 
                     b.Property<int>("QuantidadeTotal")
                         .HasColumnType("INTEGER");
-
-                    b.Property<string>("Tamanho")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
 
                     b.Property<int>("TipoUnidadeId")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("FornecedorId");
 
                     b.HasIndex("TipoUnidadeId");
 
@@ -135,7 +95,7 @@ namespace ControleEstoque.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("QuantidadeMinima")
+                    b.Property<int>("QuantidadeAviso")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
@@ -156,19 +116,11 @@ namespace ControleEstoque.Migrations
 
             modelBuilder.Entity("ControleEstoque.Produto", b =>
                 {
-                    b.HasOne("ControleEstoque.Fornecedor", "Fornecedor")
-                        .WithMany()
-                        .HasForeignKey("FornecedorId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("ControleEstoque.TipoUnidade", "TipoUnidade")
                         .WithMany()
                         .HasForeignKey("TipoUnidadeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Fornecedor");
 
                     b.Navigation("TipoUnidade");
                 });

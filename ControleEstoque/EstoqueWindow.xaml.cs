@@ -24,19 +24,85 @@ namespace ControleEstoque
     
     public partial class EstoqueWindow : Window
     {
-        public EstoqueWindow()
+        private int? _fornecedorId;
+        private bool _atualizandoTabs = false;
+
+        public EstoqueWindow(int? fornecedorId)
         {
             InitializeComponent();
+            _fornecedorId = fornecedorId;
+            CarregarFornecedoresTabs();
             CarregarEstoque();
+            CarregarProdutos();
+        }
+
+        private void TabFornecedores_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_atualizandoTabs)
+                return; // Ignora evento durante atualização das abas
+
+            var item = tabFornecedores.SelectedItem as TabItem;
+            if (item != null)
+            {
+                _fornecedorId = item.Tag as int?;
+            }
+            else
+            {
+                _fornecedorId = null;
+            }
+            CarregarProdutos();
+        }
+
+        private void CarregarFornecedoresTabs()
+        {
+            _atualizandoTabs = true; // Inicia trava
+
+            var fornecedores = EstoqueEntityManager.ObterFornecedores();
+
+            tabFornecedores.Items.Clear();
+
+            // Aba "Todos"
+            var tabTodos = new TabItem { Header = "Todos", Tag = null };
+            tabFornecedores.Items.Add(tabTodos);
+
+            foreach (var fornecedor in fornecedores)
+            {
+                var tab = new TabItem { Header = fornecedor.Nome, Tag = fornecedor.Id };
+                tabFornecedores.Items.Add(tab);
+            }
+
+            if (_fornecedorId == null)
+            {
+                // Seleciona a aba "Todos" se nenhum fornecedor estiver selecionado
+                tabFornecedores.SelectedIndex = 0;
+            }
+            else
+            {
+                // Seleciona a aba do fornecedor específico
+                var tabSelecionada = tabFornecedores.Items.Cast<TabItem>().FirstOrDefault(t => (int?)t.Tag == _fornecedorId);
+                if (tabSelecionada != null)
+                {
+                    tabFornecedores.SelectedItem = tabSelecionada;
+                }
+                else
+                {
+                    // Se o fornecedor não estiver na lista, seleciona a aba "Todos"
+                    tabFornecedores.SelectedIndex = 0;
+                }
+            }
+
+            _atualizandoTabs = false; // Libera trava
+        }
+
+        private void CarregarProdutos()
+        {
             try
             {
-                using var context = new EstoqueContext();
-                List<Produto> produtos =
-                [
-                    new Produto { Id = 0, Nome = "Todos os produtos", TipoUnidade = new TipoUnidade() },
-                        .. context.Produtos.Include(p => p.TipoUnidade)
-                            .Where(p => p.Ativo)
-                            .OrderBy(p => p.Nome).ToList(),
+                List<IdNomeViewModel> produtos = [
+                    new IdNomeViewModel(0, "Todos os produtos"),
+                    .. EstoqueEntityManager.ObterProdutosPorFornecedor(_fornecedorId, true)
+                        .Select(p => new IdNomeViewModel(p))
+                        .OrderBy(p => p.Nome).ToList()
                     ];
                 cbProduto.ItemsSource = produtos;
                 cbProduto.DisplayMemberPath = "Nome";
@@ -51,13 +117,13 @@ namespace ControleEstoque
 
         private void BtnNovo_Click(object sender, RoutedEventArgs e)
         {
-            var produto = cbProduto.SelectedItem as Produto;
+            var produto = cbProduto.SelectedItem as IdNomeViewModel;
             int? idproduto = produto?.Id;
             if (idproduto < 1)
             {
                 idproduto = null;
             }
-            EntradaSaidaWindow entradaSaidaWindow = new(idproduto);
+            EntradaSaidaWindow entradaSaidaWindow = new(_fornecedorId, idproduto);
             if (entradaSaidaWindow.ShowDialog() == true)
             {
                 CarregarEstoque();
@@ -68,27 +134,11 @@ namespace ControleEstoque
         {
             try
             {
-                var produto = cbProduto.SelectedItem as Produto;
-                using var db = new EstoqueContext();
-                var lista = db.Estoques
-                    .Include(e => e.Produto)
-                    .Include(e => e.Produto.TipoUnidade)
-                    .Where(e => produto == null || produto.Id < 1 || e.Produto.Id == produto.Id)
-                    .Select(e => new EstoqueViewModel
-                    {
-                        Id = e.Id,
-                        IdProduto = e.Produto.Id,
-                        NomeProduto = e.Produto.Nome,
-                        Quantidade = e.Quantidade,
-                        DataEntradaSaida = e.DataEntradaSaida,
-                        TipoMovimento = e.Entrada ? "Entrada" : "Saída",
-                        Observacao = e.Observacao,
-                        Unidade = e.Produto.TipoUnidade.Nome
-                    })
-                    .OrderByDescending(e => e.DataEntradaSaida)
+                var produto = cbProduto.SelectedItem as IdNomeViewModel;
+                int? idProduto = produto?.Id;
+                lstEstoque.ItemsSource = EstoqueEntityManager.ObterEstoquesPorFornecedorProduto(_fornecedorId, idProduto, null, null)
+                    .Select(e => new EstoqueViewModel(e))
                     .ToList();
-
-                lstEstoque.ItemsSource = lista;
             }
             catch (Exception ex)
             {
@@ -104,7 +154,7 @@ namespace ControleEstoque
                 if (itemSelecionado != null)
                 {
                     int idEstoque = itemSelecionado.Id;
-                    EntradaSaidaWindow entradaSaidaWindow = new(idEstoque, true);
+                    EntradaSaidaWindow entradaSaidaWindow = new(_fornecedorId, idEstoque, true);
                     if (entradaSaidaWindow.ShowDialog() == true)
                     {
                         CarregarEstoque();
@@ -194,25 +244,35 @@ namespace ControleEstoque
                 var headerRow = sheet.CreateRow(0);
                 headerRow.CreateCell(0).SetCellValue("Id");
                 headerRow.CreateCell(1).SetCellValue("Id Produto");
-                headerRow.CreateCell(2).SetCellValue("Nome Produto");
-                headerRow.CreateCell(3).SetCellValue("Unidade");
-                headerRow.CreateCell(4).SetCellValue("Tipo Movimento");
-                headerRow.CreateCell(5).SetCellValue("Data Entrada/Saída");
-                headerRow.CreateCell(6).SetCellValue("Quantidade");
-                headerRow.CreateCell(7).SetCellValue("Observação");
+                headerRow.CreateCell(2).SetCellValue("Código Produto");
+                headerRow.CreateCell(3).SetCellValue("Modelo Produto");
+                headerRow.CreateCell(4).SetCellValue("Fio Produto");
+                headerRow.CreateCell(5).SetCellValue("Milímetro Produto");
+                headerRow.CreateCell(6).SetCellValue("Tamanho Produto");
+                headerRow.CreateCell(7).SetCellValue("Fornecedor");
+                headerRow.CreateCell(8).SetCellValue("Unidade");
+                headerRow.CreateCell(9).SetCellValue("Tipo Movimento");
+                headerRow.CreateCell(10).SetCellValue("Data Entrada/Saída");
+                headerRow.CreateCell(11).SetCellValue("Quantidade");
+                headerRow.CreateCell(12).SetCellValue("Observação");
 
                 int rowIndex = 1;
                 foreach (var estoque in estoques)
                 {
                     var row = sheet.CreateRow(rowIndex++);
                     row.CreateCell(0).SetCellValue(estoque.Id);
-                    row.CreateCell(1).SetCellValue(estoque.IdProduto);
-                    row.CreateCell(2).SetCellValue(estoque.NomeProduto);
-                    row.CreateCell(3).SetCellValue(estoque.Unidade);
-                    row.CreateCell(4).SetCellValue(estoque.TipoMovimento);
-                    row.CreateCell(5).SetCellValue(estoque.DataEntradaSaida.ToString("dd/MM/yyyy HH:mm"));
-                    row.CreateCell(6).SetCellValue(estoque.Quantidade);
-                    row.CreateCell(7).SetCellValue(estoque.Observacao);
+                    row.CreateCell(1).SetCellValue(estoque.ProdutoId);
+                    row.CreateCell(2).SetCellValue(estoque.ProdutoCodigo);
+                    row.CreateCell(3).SetCellValue(estoque.ProdutoModelo);
+                    row.CreateCell(4).SetCellValue(estoque.ProdutoFio);
+                    row.CreateCell(5).SetCellValue(estoque.ProdutoMilimetro);
+                    row.CreateCell(6).SetCellValue(estoque.ProdutoTamanho);
+                    row.CreateCell(7).SetCellValue(estoque.FornecedorNome);
+                    row.CreateCell(8).SetCellValue(estoque.Unidade);
+                    row.CreateCell(9).SetCellValue(estoque.TipoMovimento);
+                    row.CreateCell(10).SetCellValue(estoque.DataEntradaSaida.ToString("dd/MM/yyyy HH:mm"));
+                    row.CreateCell(11).SetCellValue(estoque.Quantidade);
+                    row.CreateCell(12).SetCellValue(estoque.Observacao);
                 }
 
                 // Diálogo para salvar arquivo
@@ -241,30 +301,16 @@ namespace ControleEstoque
         {
             try
             {
-                var produto = cbProduto.SelectedItem as Produto;
+                var produto = cbProduto.SelectedItem as IdNomeViewModel;
                 int? idProduto = produto?.Id;
                 if (idProduto < 1)
                 {
                     idProduto = null;
                 }
-                using var db = new EstoqueContext();
-                var lista = db.Estoques
-                    .Include(e => e.Produto)
-                    .Where(e => idProduto == null || idProduto < 1 || e.Produto.Id == (int)idProduto)
-                    .Select(e => new EstoqueViewModel
-                    {
-                        Id = e.Id,
-                        IdProduto = e.Produto.Id,
-                        NomeProduto = e.Produto.Nome,
-                        Quantidade = e.Quantidade,
-                        DataEntradaSaida = e.DataEntradaSaida,
-                        TipoMovimento = e.Entrada ? "Entrada" : "Saída",
-                        Observacao = e.Observacao
-                    })
-                    .OrderByDescending(e => e.DataEntradaSaida)
-                    .ToList();
 
-                lstEstoque.ItemsSource = lista;
+                lstEstoque.ItemsSource = EstoqueEntityManager.ObterEstoquesPorFornecedorProduto(_fornecedorId, idProduto, null, null)
+                    .Select(e => new EstoqueViewModel(e))
+                    .ToList();
                 MessageBox.Show("Lista de estoque atualizada com sucesso.", "Sucesso", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)

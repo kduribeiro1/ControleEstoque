@@ -6,6 +6,9 @@
         xmlns:local="clr-namespace:ControleEstoque"
         mc:Ignorable="d"
         Title="Produtos" Height="450" Width="800" WindowStartupLocation="CenterScreen">
+    <Window.Resources>
+        <local:QuantidadeAlertaConverter x:Key="QuantidadeAlertaConverter"/>
+    </Window.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="5" />
@@ -16,12 +19,14 @@
             <RowDefinition Height="5" />
             <RowDefinition Height="40" />
             <RowDefinition Height="5" />
+            <RowDefinition Height="40" />
+            <RowDefinition Height="5" />
             <RowDefinition Height="*" />
             <RowDefinition Height="5" />
             <RowDefinition Height="40" />
             <RowDefinition Height="5" />
         </Grid.RowDefinitions>
-        <Grid Grid.Column="1" Grid.Row="1">
+        <Grid Grid.Column="1" Grid.Row="3">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="250" />
                 <ColumnDefinition Width="5" />
@@ -33,22 +38,131 @@
             <Label Content="Filtrar por nome:"  FontSize="14" Grid.Column="2" VerticalContentAlignment="Center" HorizontalContentAlignment="Right" />
             <TextBox x:Name="txtFiltroNome" Grid.Column="4" TextChanged="TxtFiltroNome_TextChanged" VerticalContentAlignment="Center" FontSize="14" />
         </Grid>
-        <Grid Grid.Column="1" Grid.Row="3">
-            <ListView x:Name="lstProdutos">
+        <Grid Grid.Column="1" Grid.Row="1">
+            <TabControl x:Name="tabFornecedores" SelectionChanged="TabFornecedores_SelectionChanged" BorderBrush="{x:Null}">
+                <!-- As abas serão geradas dinamicamente no code-behind -->
+            </TabControl>
+        </Grid>
+        <Grid Grid.Column="1" Grid.Row="5">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="5" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="5" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="5" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="5" />
+                <RowDefinition Height="40" />
+            </Grid.RowDefinitions>
+            <ListView x:Name="lstProdutos" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="7">
+                <ListView.ItemContainerStyle>
+                    <Style TargetType="ListViewItem">
+                        <Style.Triggers>
+                            <!-- Vermelho -->
+                            <DataTrigger Value="2">
+                                <DataTrigger.Binding>
+                                    <MultiBinding Converter="{StaticResource QuantidadeAlertaConverter}">
+                                        <Binding Path="QuantidadeTotal"/>
+                                        <Binding Path="QuantidadeMinima"/>
+                                    </MultiBinding>
+                                </DataTrigger.Binding>
+                                <Setter Property="Foreground" Value="#FFDA0000"/>
+                            </DataTrigger>
+                            <!-- Amarelo -->
+                            <DataTrigger Value="1">
+                                <DataTrigger.Binding>
+                                    <MultiBinding Converter="{StaticResource QuantidadeAlertaConverter}">
+                                        <Binding Path="QuantidadeTotal"/>
+                                        <Binding Path="QuantidadeMinima"/>
+                                    </MultiBinding>
+                                </DataTrigger.Binding>
+                                <Setter Property="Foreground" Value="#FFE89600"/>
+                            </DataTrigger>
+                            <!-- Normal -->
+                            <DataTrigger Value="0">
+                                <DataTrigger.Binding>
+                                    <MultiBinding Converter="{StaticResource QuantidadeAlertaConverter}">
+                                        <Binding Path="QuantidadeTotal"/>
+                                        <Binding Path="QuantidadeMinima"/>
+                                    </MultiBinding>
+                                </DataTrigger.Binding>
+                                <Setter Property="Foreground" Value="Black"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ListView.ItemContainerStyle>
                 <ListView.View>
                     <GridView>
                         <GridViewColumn Header="Id" DisplayMemberBinding="{Binding Id}" Width="50"/>
-                        <GridViewColumn Header="Nome" DisplayMemberBinding="{Binding Nome}"/>
-                        <GridViewColumn Header="Unidade" DisplayMemberBinding="{Binding Unidade}" Width="100"/>
-                        <GridViewColumn Header="Preço" DisplayMemberBinding="{Binding PrecoUnidade}" Width="80"/>
+                        <GridViewColumn Header="Cód." DisplayMemberBinding="{Binding Codigo}" Width="100"/>
+                        <GridViewColumn Header="Modelo" DisplayMemberBinding="{Binding Modelo}" Width="150"/>
+                        <GridViewColumn Header="Fio" DisplayMemberBinding="{Binding Fio}" Width="100"/>
+                        <GridViewColumn Header="Milímetro" DisplayMemberBinding="{Binding Milimetros}" Width="100"/>
+                        <GridViewColumn Header="Tamanho" DisplayMemberBinding="{Binding Tamanho}" Width="100"/>
+                        <GridViewColumn Header="Fornecedor" DisplayMemberBinding="{Binding FornecedorNome}" Width="150"/>
+                        <GridViewColumn Header="Unidade" DisplayMemberBinding="{Binding TipoUnidadeNome}" Width="100"/>
                         <GridViewColumn Header="Quantidade" DisplayMemberBinding="{Binding QuantidadeTotal}" Width="80"/>
+                        <GridViewColumn Header="Qtde Mínima" DisplayMemberBinding="{Binding QuantidadeMinima}" Width="80"/>
                         <GridViewColumn Header="Ativo" DisplayMemberBinding="{Binding Ativo}" Width="60"/>
-                        <GridViewColumn Header="Alteração" DisplayMemberBinding="{Binding Alteracao}" Width="120"/>
+                        <GridViewColumn Header="Alteração" Width="120">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Alteracao, StringFormat='dd/MM/yyyy HH:mm'}"/>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
                     </GridView>
                 </ListView.View>
             </ListView>
+            <Label Content="Legenda:" Grid.Row="2" Grid.Column="0" VerticalContentAlignment="Center" HorizontalContentAlignment="Right"/>
+            <Grid Grid.Row="2" Grid.Column="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="20" />
+                    <ColumnDefinition Width="5" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="6" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <Rectangle Grid.Column="0" Grid.Row="1" Fill="Black" RadiusX="2" RadiusY="2"/>
+                <TextBlock Grid.Column="2" Grid.Row="0" Grid.RowSpan="3" Text="Possui estoque disponível" ToolTip="Possui estoque acima de 15% para atingir a quantidade mínima definida" VerticalAlignment="Center" Foreground="Black" TextTrimming="CharacterEllipsis"/>
+            </Grid>
+            <Grid Grid.Row="2" Grid.Column="4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="20" />
+                    <ColumnDefinition Width="5" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="6" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <Rectangle Grid.Column="0" Grid.Row="1" Fill="#FFE89600" RadiusX="2" RadiusY="2"/>
+                <TextBlock Grid.Column="2" Grid.Row="0" Grid.RowSpan="3" Text="Próximo da quantidade mínima" ToolTip="Falta 15% ou menos para atingir a quantidade mínima definida" VerticalAlignment="Center" Foreground="#FFE89600" TextTrimming="CharacterEllipsis"/>
+            </Grid>
+            <Grid Grid.Row="2" Grid.Column="6">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="20" />
+                    <ColumnDefinition Width="5" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="6" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <Rectangle Grid.Column="0" Grid.Row="1" Fill="#FFDA0000" RadiusX="2" RadiusY="2"/>
+                <TextBlock Grid.Column="2" Grid.Row="0" Grid.RowSpan="3" Text="Quantidade mínima atingida" ToolTip="O estoque atingiu ou está abaixo da quantidade mínima definida" VerticalAlignment="Center" Foreground="#FFDA0000" TextTrimming="CharacterEllipsis"/>
+            </Grid>
         </Grid>
-        <Grid Grid.Column="1" Grid.Row="5">
+        <Grid Grid.Column="1" Grid.Row="7">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="5" />

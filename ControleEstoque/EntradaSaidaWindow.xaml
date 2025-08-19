@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ControleEstoque"
         mc:Ignorable="d"
-        Title="Entrada/Saída de Estoque" Height="350" MinHeight="350" Width="550" MinWidth="550" WindowStartupLocation="CenterScreen">
+        Title="Entrada/Saída de Estoque" Height="385" MinHeight="385" Width="550" MinWidth="550" WindowStartupLocation="CenterScreen">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="5" />
@@ -22,6 +22,8 @@
             <RowDefinition Height="5" />
             <RowDefinition Height="55" />
             <RowDefinition Height="5" />
+            <RowDefinition Height="55" />
+            <RowDefinition Height="5" />
             <RowDefinition Height="*" />
             <RowDefinition Height="5" />
             <RowDefinition Height="30" />
@@ -33,16 +35,16 @@
                 <RowDefinition Height="25" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
-            <TextBlock Text="Produto:" Grid.Row="0" VerticalAlignment="Center" />
-            <ComboBox x:Name="cbProduto" DisplayMemberPath="Nome" SelectedValuePath="Id" SelectionChanged="CbProduto_SelectionChanged" Grid.Row="1" VerticalContentAlignment="Center" />
+            <TextBlock Text="Fornecedor:" Grid.Row="0" VerticalAlignment="Center" />
+            <ComboBox x:Name="cbFornecedor" DisplayMemberPath="Nome" SelectedValuePath="Id" SelectionChanged="CbFornecedor_SelectionChanged" Grid.Row="1" VerticalContentAlignment="Center" />
         </Grid>
         <Grid Grid.Column="3" Grid.Row="3">
             <Grid.RowDefinitions>
                 <RowDefinition Height="25" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
-            <TextBlock x:Name="txtTituloQtde" Text="Quantidade:" Grid.Row="0" VerticalAlignment="Center" />
-            <TextBox x:Name="txtQuantidade" PreviewTextInput="TxtQuantidade_PreviewTextInput" DataObject.Pasting="TxtQuantidade_Pasting" Grid.Row="1" VerticalContentAlignment="Center" />
+            <TextBlock Text="Produto:" Grid.Row="0" VerticalAlignment="Center" />
+            <ComboBox x:Name="cbProduto" DisplayMemberPath="Nome" SelectedValuePath="Id" SelectionChanged="CbProduto_SelectionChanged" Grid.Row="1" VerticalContentAlignment="Center" />
         </Grid>
         <Grid Grid.Column="1" Grid.Row="5">
             <Grid.RowDefinitions>
@@ -64,13 +66,29 @@
                 <RowDefinition Height="25" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
-            <TextBlock Text="Tipo de Movimento:" Grid.Row="0" VerticalAlignment="Center" />
-            <ComboBox x:Name="cbTipoMovimento" SelectedValuePath="Tag" Grid.Row="1" VerticalContentAlignment="Center">
+            <TextBlock Text="Tipo de Movimento:" Grid.Column="0" Grid.Row="0" VerticalAlignment="Center" />
+            <ComboBox x:Name="cbTipoMovimento" SelectedValuePath="Tag" Grid.Column="0" Grid.Row="1" VerticalContentAlignment="Center">
                 <ComboBoxItem Content="Entrada" Tag="1" />
                 <ComboBoxItem Content="Saída" Tag="0" />
             </ComboBox>
         </Grid>
-        <Grid Grid.Column="1" Grid.ColumnSpan="3" Grid.Row="7">
+        <Grid Grid.Column="1" Grid.Row="7">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="25" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <TextBlock x:Name="txtTituloQtdeTotal" Text="Quantidade Total:" Grid.Column="2" Grid.Row="0" VerticalAlignment="Center" />
+            <TextBox x:Name="txtQuantidadeTotal" IsReadOnly="True" IsEnabled="False" Grid.Column="2" Grid.Row="1" VerticalContentAlignment="Center" />
+        </Grid>
+        <Grid Grid.Column="3" Grid.Row="7">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="25" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <TextBlock x:Name="txtTituloQtde" Text="Quantidade:" Grid.Column="2" Grid.Row="0" VerticalAlignment="Center" />
+            <TextBox x:Name="txtQuantidade" PreviewTextInput="TxtQuantidade_PreviewTextInput" DataObject.Pasting="TxtQuantidade_Pasting" Grid.Column="2" Grid.Row="1" VerticalContentAlignment="Center" />
+        </Grid>
+        <Grid Grid.Column="1" Grid.ColumnSpan="3" Grid.Row="9">
             <Grid.RowDefinitions>
                 <RowDefinition Height="25" />
                 <RowDefinition Height="*" />
@@ -78,7 +96,7 @@
             <TextBlock Text="Observação:" Grid.Row="0" VerticalAlignment="Center" />
             <TextBox x:Name="txtObservacao" AcceptsReturn="True" Grid.Row="1" />
         </Grid>
-        <Button x:Name="btnFechar" Content="Fechar" Grid.Column="1" Grid.Row="9" Click="BtnFechar_Click"/>
-        <Button x:Name="btnSalvar" Content="Salvar" Grid.Column="3" Grid.Row="9" Click="BtnSalvar_Click"/>
+        <Button x:Name="btnFechar" Content="Fechar" Grid.Column="1" Grid.Row="11" Click="BtnFechar_Click"/>
+        <Button x:Name="btnSalvar" Content="Salvar" Grid.Column="3" Grid.Row="11" Click="BtnSalvar_Click"/>
     </Grid>
 </Window>

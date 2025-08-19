@@ -22,23 +22,57 @@ namespace ControleEstoque
     
     public partial class EntradaSaidaWindow : Window
     {
+        private int? _fornecedorId;
+        private bool _editar = false;
         private int IdEstoque { get; set; } = 0;
         private Estoque Estoque { get; set; } = new Estoque();
         private Produto? Produto { get; set; }
+        private Fornecedor? Fornecedor { get; set; }
 
-        public EntradaSaidaWindow(int? idProduto = null)
+        public EntradaSaidaWindow(int? idFornecedor, int? idProduto = null)
         {
             InitializeComponent();
+            _fornecedorId = idFornecedor;
+            Fornecedor = null;
+
+            _editar = true;
+            try
+            {
+                List<IdNomeViewModel> fornecedores =
+                [
+                    new IdNomeViewModel { Id = 0, Nome = "Todos os fornecedores" },
+                        .. EstoqueEntityManager.ObterFornecedores()
+                            .Select(p => new IdNomeViewModel(p))
+                            .OrderBy(p => p.Nome).ToList(),
+                    ];
+                cbFornecedor.ItemsSource = fornecedores;
+                cbFornecedor.DisplayMemberPath = "Nome";
+                cbFornecedor.SelectedValuePath = "Id";
+                cbFornecedor.SelectedIndex = 0;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Erro ao carregar fornecedores: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            if (_fornecedorId.HasValue && _fornecedorId.Value > 0)
+            {
+                Fornecedor = EstoqueEntityManager.ObterFornecedorPorId(_fornecedorId.Value);
+                if (Fornecedor != null)
+                {
+                    cbFornecedor.SelectedValue = Fornecedor.Id;
+                }
+            }
+            _editar = false;
+
             Estoque = new Estoque();
             IdEstoque = 0;
             try
             {
-                using var context = new EstoqueContext();
-                List<Produto> produtos =
+                List<IdNomeViewModel> produtos =
                 [
-                    new Produto { Id = 0, Nome = "Selecione um produto", TipoUnidade = null! },
-                    .. context.Produtos.Include(p => p.TipoUnidade)
-                        .Where(p => p.Ativo)
+                    new IdNomeViewModel { Id = 0, Nome = "Selecione um produto" },
+                    .. EstoqueEntityManager.ObterProdutosPorFornecedor(_fornecedorId)
+                        .Select(p => new IdNomeViewModel(p))
                         .OrderBy(p => p.Nome).ToList(),
                 ];
                 cbProduto.ItemsSource = produtos;
@@ -53,36 +87,81 @@ namespace ControleEstoque
             if (idProduto.HasValue)
             {
                 cbProduto.SelectedValue = idProduto;
-                Produto = cbProduto.SelectedItem as Produto;
+                IdNomeViewModel? prodSelecionado = cbProduto.SelectedItem as IdNomeViewModel;
+                if (prodSelecionado == null || prodSelecionado.Id <= 0)
+                {
+                    Produto = null;
+                }
+                else
+                {
+                    Produto = EstoqueEntityManager.ObterProdutoPorId(prodSelecionado.Id);
+                }
                 if (Produto?.TipoUnidade?.Nome != null)
                 {
                     txtTituloQtde.Text = $"Quantidade: ({Produto.TipoUnidade.Nome})";
+                    txtTituloQtdeTotal.Text = $"Quantidade Total: ({Produto.TipoUnidade.Nome})";
+                    txtQuantidadeTotal.Text = Produto.QuantidadeTotal.ToString();
                 }
                 else
                 {
                     txtTituloQtde.Text = "Quantidade:";
+                    txtTituloQtdeTotal.Text = "Quantidade Total:";
+                    txtQuantidadeTotal.Text = "0";
                 }
             }
             else
             {
                 txtTituloQtde.Text = "Quantidade:";
+                txtTituloQtdeTotal.Text = "Quantidade Total:";
+                txtQuantidadeTotal.Text = "0";
             }
             dpDataEntradaSaida.SelectedDate = DateTime.UtcNow.AddHours(-3);
             txtHoraEntradaSaida.Text = DateTime.UtcNow.AddHours(-3).ToString("HH:mm");
+            cbTipoMovimento.SelectedValue = "0"; // Saída por padrão
         }
 
-        public EntradaSaidaWindow(int id, bool editar)
+        public EntradaSaidaWindow(int? idFornecedor, int id, bool editar)
         {
             InitializeComponent();
+            _fornecedorId = idFornecedor;
             IdEstoque = id;
+
+            _editar = true;
             try
             {
-                using var context = new EstoqueContext();
-                List<Produto> produtos =
+                List<IdNomeViewModel> fornecedores =
                 [
-                    new Produto { Id = 0, Nome = "Selecione um produto", TipoUnidade = null! },
-                    .. context.Produtos.Include(p => p.TipoUnidade)
-                        .Where(p => p.Ativo)
+                    new IdNomeViewModel { Id = 0, Nome = "Todos os fornecedores" },
+                        .. EstoqueEntityManager.ObterFornecedores()
+                            .Select(p => new IdNomeViewModel(p))
+                            .OrderBy(p => p.Nome).ToList(),
+                    ];
+                cbFornecedor.ItemsSource = fornecedores;
+                cbFornecedor.DisplayMemberPath = "Nome";
+                cbFornecedor.SelectedValuePath = "Id";
+                cbFornecedor.SelectedIndex = 0;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Erro ao carregar fornecedores: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            if (_fornecedorId.HasValue && _fornecedorId.Value > 0)
+            {
+                Fornecedor = EstoqueEntityManager.ObterFornecedorPorId(_fornecedorId.Value);
+                if (Fornecedor != null)
+                {
+                    cbFornecedor.SelectedValue = Fornecedor.Id;
+                }
+            }
+            _editar = false;
+
+            try
+            {
+                List<IdNomeViewModel> produtos =
+                [
+                    new IdNomeViewModel { Id = 0, Nome = "Selecione um produto" },
+                    .. EstoqueEntityManager.ObterProdutosPorFornecedor(_fornecedorId)
+                        .Select(p => new IdNomeViewModel(p))
                         .OrderBy(p => p.Nome).ToList(),
                 ];
                 cbProduto.ItemsSource = produtos;
@@ -93,36 +172,46 @@ namespace ControleEstoque
             {
                 MessageBox.Show($"Erro ao carregar produtos: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-            using (var context = new EstoqueContext())
+            Estoque? estoque = EstoqueEntityManager.ObterEstoquePorId(id);
+            if (estoque == null)
             {
-                var estoque = context.Estoques.Include(p => p.Produto).Include(c => c.Produto.TipoUnidade).FirstOrDefault(e => e.Id == id);
-                if (estoque != null)
-                {
-                    Produto = estoque.Produto;
-                    Estoque = estoque;
-                    dpDataEntradaSaida.SelectedDate = Estoque.DataEntradaSaida;
-                    txtHoraEntradaSaida.Text = Estoque.DataEntradaSaida.ToString("HH:mm");
-                    cbProduto.SelectedValue = Estoque.Produto.Id;
-                    txtQuantidade.Text = Estoque.Quantidade.ToString();
-                    cbTipoMovimento.SelectedValue = Estoque.Entrada ? "1" : "0";
-                    txtObservacao.Text = Estoque.Observacao;
-                    // Atualiza o título da quantidade com a unidade do produto selecionado
-                    if (Produto?.TipoUnidade?.Nome != null)
-                    {
-                        txtTituloQtde.Text = $"Quantidade: ({Produto.TipoUnidade.Nome})";
-                    }
-                    else
-                    {
-                        txtTituloQtde.Text = "Quantidade:";
-                    }
-                }
+                MessageBox.Show("Registro não encontrado.", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+                this.Close();
             }
-            dpDataEntradaSaida.IsEnabled = editar;
-            cbProduto.IsEnabled = editar;
-            txtQuantidade.IsEnabled = editar;
-            cbTipoMovimento.IsEnabled = editar;
-            txtObservacao.IsEnabled = editar;
-            txtHoraEntradaSaida.IsEnabled = editar;
+            else
+            {
+                cbFornecedor.IsEnabled = false;
+                cbProduto.IsEnabled = false;
+                cbTipoMovimento.IsEnabled = false;
+
+                Produto = estoque.Produto;
+                Estoque = estoque;
+                dpDataEntradaSaida.SelectedDate = Estoque.DataEntradaSaida;
+                txtHoraEntradaSaida.Text = Estoque.DataEntradaSaida.ToString("HH:mm");
+                cbProduto.SelectedValue = Estoque.Produto.Id;
+                txtQuantidade.Text = Estoque.Quantidade.ToString();
+                cbTipoMovimento.SelectedValue = Estoque.Entrada ? "1" : "0";
+                txtObservacao.Text = Estoque.Observacao;
+                
+                // Atualiza o título da quantidade com a unidade do produto selecionado
+                if (Produto?.TipoUnidade?.Nome != null)
+                {
+                    txtTituloQtde.Text = $"Quantidade: ({Produto.TipoUnidade.Nome})";
+                    txtTituloQtdeTotal.Text = $"Quantidade Total: ({Produto.TipoUnidade.Nome})";
+                    txtQuantidadeTotal.Text = Produto.QuantidadeTotal.ToString();
+                }
+                else
+                {
+                    txtTituloQtde.Text = "Quantidade:";
+                    txtTituloQtdeTotal.Text = "Quantidade Total:";
+                    txtQuantidadeTotal.Text = "0";
+                }
+
+                txtQuantidade.IsEnabled = editar;
+                txtObservacao.IsEnabled = editar;
+                dpDataEntradaSaida.IsEnabled = editar;
+                txtHoraEntradaSaida.IsEnabled = editar;
+            }
         }
 
         // Permite apenas dígitos e dois pontos, e limita a estrutura HH:mm
@@ -145,18 +234,82 @@ namespace ControleEstoque
 
         private void CbProduto_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (cbProduto.SelectedItem is Produto produtoSelecionado && produtoSelecionado.Id > 0)
+            if (cbProduto.SelectedItem is IdNomeViewModel produtoSelecionado && produtoSelecionado.Id > 0)
             {
-                Estoque.Produto = produtoSelecionado;
-                Produto = produtoSelecionado;
-                txtTituloQtde.Text = produtoSelecionado.TipoUnidade?.Nome != null
-                    ? $"Quantidade: ({produtoSelecionado.TipoUnidade.Nome})"
+                Produto = EstoqueEntityManager.ObterProdutoPorId(produtoSelecionado.Id);
+                if (Produto == null)
+                {
+                    Estoque.Produto = null!;
+                    txtTituloQtde.Text = "Quantidade:";
+                    txtTituloQtdeTotal.Text = "Quantidade Total:";
+                    txtQuantidadeTotal.Text = "0";
+                    MessageBox.Show("Produto não encontrado.");
+                    return;
+                }
+                Estoque.Produto = Produto;
+                txtTituloQtde.Text = Produto.TipoUnidade?.Nome != null
+                    ? $"Quantidade: ({Produto.TipoUnidade.Nome})"
                     : "Quantidade:";
+                txtTituloQtdeTotal.Text = Produto.TipoUnidade?.Nome != null
+                    ? $"Quantidade Total: ({Produto.TipoUnidade.Nome})"
+                    : "Quantidade Total:";
+                txtQuantidadeTotal.Text = Produto.QuantidadeTotal.ToString();
+
+
+                if (cbFornecedor.SelectedItem is IdNomeViewModel fornecedorSelecionado && fornecedorSelecionado.Id < 1)
+                {
+                    cbFornecedor.SelectedValue = Produto.FornecedorId;
+                }
             }
             else
             {
+                Produto = null;
                 Estoque.Produto = null!;
                 txtTituloQtde.Text = "Quantidade:";
+                txtTituloQtdeTotal.Text = "Quantidade Total:";
+                txtQuantidadeTotal.Text = "0";
+            }
+        }
+
+        private void CbFornecedor_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_editar)
+                return;
+
+            Produto? produtoAntes = Produto;
+
+            if (cbFornecedor.SelectedItem is IdNomeViewModel fornecedorSelecionado && fornecedorSelecionado.Id > 0)
+            {
+                _fornecedorId = fornecedorSelecionado.Id;
+                Fornecedor = EstoqueEntityManager.ObterFornecedorPorId(fornecedorSelecionado.Id);
+                if (Fornecedor == null)
+                {
+                    _fornecedorId = null;
+                    MessageBox.Show("Fornecedor não encontrado.");
+                }
+            }
+            else
+            {
+                _fornecedorId = null;
+            }
+            try
+            {
+                List<IdNomeViewModel> produtos =
+                [
+                    new IdNomeViewModel { Id = 0, Nome = "Selecione um produto" },
+                        .. EstoqueEntityManager.ObterProdutosPorFornecedor(_fornecedorId)
+                            .Select(p => new IdNomeViewModel(p))
+                            .OrderBy(p => p.Nome).ToList(),
+                    ];
+                cbProduto.ItemsSource = produtos;
+                cbProduto.DisplayMemberPath = "Nome";
+                cbProduto.SelectedValuePath = "Id";
+                int idBuscar = produtoAntes?.Id ?? 0;
+                cbProduto.SelectedValue = produtos.Where(p => p.Id == idBuscar).Any() ? idBuscar : 0;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Erro ao carregar produtos: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -187,7 +340,7 @@ namespace ControleEstoque
         {
             try
             {
-                var produtoSelecionado = cbProduto.SelectedItem as Produto;
+                var produtoSelecionado = cbProduto.SelectedItem as IdNomeViewModel;
                 if (produtoSelecionado == null)
                 {
                     MessageBox.Show("Selecione um produto.");
@@ -230,34 +383,15 @@ namespace ControleEstoque
 
                     DateTime dataHoraEntradaSaida = data.Date + hora;
 
-                    Estoque.Produto = produtoSelecionado;
+                    Estoque.ProdutoId = produtoSelecionado.Id;
                     Estoque.DataEntradaSaida = dataHoraEntradaSaida;
                     Estoque.Quantidade = int.Parse(txtQuantidade.Text);
                     Estoque.Entrada = cbTipoMovimento.SelectedValue?.ToString() == "1";
                     Estoque.Observacao = txtObservacao.Text;
-                    try
+                    if (EstoqueEntityManager.LancarEstoque(Estoque))
                     {
-                        using (var _context = new EstoqueContext())
-                        {
-                            if (Estoque.Entrada)
-                            {
-                                produtoSelecionado.QuantidadeTotal += Estoque.Quantidade;
-                            }
-                            else
-                            {
-                                produtoSelecionado.QuantidadeTotal -= Estoque.Quantidade;
-                            }
-                            produtoSelecionado.Alteracao = DateTime.Now;
-                            _context.Produtos.Update(produtoSelecionado);
-                            _context.Estoques.Update(Estoque);
-                            _context.SaveChanges();
-                        }
                         MessageBox.Show("Registro atualizado com sucesso!");
                         this.Close();
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show($"Erro ao atualizar registro: {ex.Message}");
                     }
                 }
                 else
@@ -271,35 +405,16 @@ namespace ControleEstoque
 
                     Estoque = new Estoque
                     {
-                        Produto = produtoSelecionado,
+                        ProdutoId = produtoSelecionado.Id,
                         Quantidade = int.Parse(txtQuantidade.Text),
                         DataEntradaSaida = dataHoraEntradaSaida,
                         Entrada = cbTipoMovimento.SelectedValue?.ToString() == "1",
                         Observacao = txtObservacao.Text
                     };
-                    try
+                    if (EstoqueEntityManager.LancarEstoque(Estoque))
                     {
-                        using (var _context = new EstoqueContext())
-                        {
-                            if (Estoque.Entrada)
-                            {
-                                produtoSelecionado.QuantidadeTotal += Estoque.Quantidade;
-                            }
-                            else
-                            {
-                                produtoSelecionado.QuantidadeTotal -= Estoque.Quantidade;
-                            }
-                            produtoSelecionado.Alteracao = DateTime.Now;
-                            _context.Produtos.Update(produtoSelecionado);
-                            _context.Estoques.Add(Estoque);
-                            _context.SaveChanges();
-                        }
                         MessageBox.Show("Registro salvo com sucesso!");
                         this.Close();
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show($"Erro ao salvar registro: {ex.Message}");
                     }
                 }
             }

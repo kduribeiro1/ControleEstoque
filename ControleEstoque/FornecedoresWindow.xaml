@@ -1,11 +1,11 @@
-﻿<Window x:Class="ControleEstoque.EstoqueWindow"
+﻿<Window x:Class="ControleEstoque.FornecedoresWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ControleEstoque"
         mc:Ignorable="d"
-        Title="Histórico do Estoque" Height="450" Width="800" WindowStartupLocation="CenterScreen">
+        Title="Fornecedores" Height="450" Width="800" WindowStartupLocation="CenterScreen">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="5" />
@@ -16,19 +16,12 @@
             <RowDefinition Height="5" />
             <RowDefinition Height="40" />
             <RowDefinition Height="5" />
-            <RowDefinition Height="40" />
-            <RowDefinition Height="5" />
             <RowDefinition Height="*" />
             <RowDefinition Height="5" />
             <RowDefinition Height="40" />
             <RowDefinition Height="5" />
         </Grid.RowDefinitions>
         <Grid Grid.Column="1" Grid.Row="1">
-            <TabControl x:Name="tabFornecedores" SelectionChanged="TabFornecedores_SelectionChanged" BorderBrush="{x:Null}">
-                <!-- As abas serão geradas dinamicamente no code-behind -->
-            </TabControl>
-        </Grid>
-        <Grid Grid.Column="1" Grid.Row="3">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="250" />
                 <ColumnDefinition Width="5" />
@@ -36,30 +29,22 @@
                 <ColumnDefinition Width="5" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
-            <Label Content="Histórico do Estoque" FontWeight="Bold" FontSize="16" Grid.Column="0" VerticalContentAlignment="Center" />
-            <Label Content="Filtrar por produto:" FontSize="14" Grid.Column="2" VerticalContentAlignment="Center" HorizontalContentAlignment="Right"/>
-            <ComboBox x:Name="cbProduto" DisplayMemberPath="Nome" SelectedValuePath="Id" SelectionChanged="CbProduto_SelectionChanged" Grid.Column="4" VerticalContentAlignment="Center" FontSize="14" />
+            <Label Content="Fornecedores" FontWeight="Bold" FontSize="16" Grid.Column="0" VerticalContentAlignment="Center" />
+            <Label Content="Filtrar por nome:"  FontSize="14" Grid.Column="2" VerticalContentAlignment="Center" HorizontalContentAlignment="Right" />
+            <TextBox x:Name="txtFiltroNome" Grid.Column="4" VerticalContentAlignment="Center" FontSize="14" />
         </Grid>
-        <Grid Grid.Column="1" Grid.Row="5">
-            <ListView x:Name="lstEstoque">
+        <Grid Grid.Column="1" Grid.Row="3">
+            <ListView x:Name="lstFornecedores">
                 <ListView.View>
                     <GridView>
-                        <GridViewColumn Header="Código" DisplayMemberBinding="{Binding ProdutoCodigo}" Width="150"/>
-                        <GridViewColumn Header="Modelo" DisplayMemberBinding="{Binding ProdutoModelo}" Width="150"/>
-                        <GridViewColumn Header="Fio" DisplayMemberBinding="{Binding ProdutoFio}" Width="150"/>
-                        <GridViewColumn Header="Milímetro" DisplayMemberBinding="{Binding ProdutoMilimetro}" Width="150"/>
-                        <GridViewColumn Header="Tamanho" DisplayMemberBinding="{Binding ProdutoTamanho}" Width="150"/>
-                        <GridViewColumn Header="Fornecedor" DisplayMemberBinding="{Binding FornecedorNome}" Width="150"/>
-                        <GridViewColumn Header="Tipo" DisplayMemberBinding="{Binding TipoMovimento}" Width="80"/>
-                        <GridViewColumn Header="Quantidade" DisplayMemberBinding="{Binding Quantidade}" Width="100"/>
-                        <GridViewColumn Header="Unidade" DisplayMemberBinding="{Binding Unidade}" Width="100"/>
-                        <GridViewColumn Header="Data" DisplayMemberBinding="{Binding DataEntradaSaida}" Width="120"/>
-                        <GridViewColumn Header="Observação" DisplayMemberBinding="{Binding Observacao}" Width="200"/>
+                        <GridViewColumn Header="Id" Width="60" DisplayMemberBinding="{Binding Id}" />
+                        <GridViewColumn Header="Nome" DisplayMemberBinding="{Binding Nome}" />
+                        <GridViewColumn Header="Ativo" Width="100" DisplayMemberBinding="{Binding Ativo}" />
                     </GridView>
                 </ListView.View>
             </ListView>
         </Grid>
-        <Grid Grid.Column="1" Grid.Row="7">
+        <Grid Grid.Column="1" Grid.Row="5">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="5" />
@@ -74,7 +59,7 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
             <Button x:Name="btnNovo" Content="Novo" Grid.Column="0" Click="BtnNovo_Click"/>
-            <Button x:Name="btnEditar" Content="Editar" Grid.Column="2" Click="BtnEditar_Click"/>
+            <Button x:Name="btnEditar" Content="Editar" Grid.Column="2" Click="BtnEditar_Click" />
             <Button x:Name="btnRemover" Content="Deletar" Grid.Column="4" Click="BtnDeletar_Click"/>
             <Button x:Name="btnAtualizar" Content="Atualizar" Grid.Column="6" Click="BtnAtualizar_Click"/>
             <!--<Button x:Name="btnImportar" Content="Importar" Grid.Column="8" Click="BtnImportar_Click"/>-->

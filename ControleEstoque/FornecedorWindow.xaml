@@ -1,11 +1,11 @@
-﻿<Window x:Class="ControleEstoque.TipoUnidadeWindow"
+﻿<Window x:Class="ControleEstoque.FornecedorWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ControleEstoque"
         mc:Ignorable="d"
-        Title="Tipo de Unidade" Height="245" MinHeight="245" Width="400" MinWidth="400" WindowStartupLocation="CenterScreen">
+        Title="Fornecedor" Height="216" MinHeight="216" Width="400" MinWidth="400" WindowStartupLocation="CenterScreen">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="5" />
@@ -25,7 +25,7 @@
             <RowDefinition Height="30" />
             <RowDefinition Height="5" />
         </Grid.RowDefinitions>
-        <Label x:Name="lblTitulo" Content="Cadastro de Tipo de Unidade" FontWeight="Bold" FontSize="16" Margin="5" Grid.Column="1" Grid.Row="1" Grid.ColumnSpan="3"/>
+        <Label x:Name="lblTitulo" Content="Cadastro de Fornecedor" FontWeight="Bold" FontSize="16" Margin="5" Grid.Column="1" Grid.Row="1" Grid.ColumnSpan="3"/>
 
         <Grid Grid.Column="1" Grid.ColumnSpan="3" Grid.Row="3">
             <Grid.RowDefinitions>
@@ -38,14 +38,12 @@
 
         <Grid Grid.Column="1" Grid.ColumnSpan="3" Grid.Row="5">
             <Grid.RowDefinitions>
-                <RowDefinition Height="25" />
                 <RowDefinition Height="30" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
-            <TextBlock Text="Quantidade Mínima:" Grid.Row="0" VerticalAlignment="Center" />
-            <TextBox x:Name="txtQtdeAviso" Grid.Row="1" VerticalContentAlignment="Center" PreviewTextInput="TxtQtdeAviso_PreviewTextInput" />
+            <CheckBox x:Name="chkAtivo" Content="Ativo" Grid.Row="0" VerticalContentAlignment="Center" />
         </Grid>
         <Button x:Name="btnFechar" Content="Fechar" Grid.Column="1" Grid.Row="7" Click="BtnFechar_Click"/>
-        <Button x:Name="btnSalvar" Content="Salvar" Grid.Column="3" Grid.Row="7" Click="BtnSalvar_Click"/>
+        <Button x:Name="btnSalvar" Content="Salvar" Grid.Column="3" Grid.Row="7" Click="BtnSalvar_Click" />
     </Grid>
 </Window>

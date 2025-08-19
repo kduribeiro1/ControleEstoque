@@ -39,7 +39,7 @@
                     <GridView>
                         <GridViewColumn Header="Id" Width="60" DisplayMemberBinding="{Binding Id}" />
                         <GridViewColumn Header="Nome" DisplayMemberBinding="{Binding Nome}" />
-                        <GridViewColumn Header="Quantidade Aviso" Width="150" DisplayMemberBinding="{Binding QuantidadeAviso}" />
+                        <GridViewColumn Header="Quantidade Mínima" Width="150" DisplayMemberBinding="{Binding QuantidadeMinima}" />
                     </GridView>
                 </ListView.View>
             </ListView>

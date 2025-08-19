@@ -20,36 +20,48 @@ namespace ControleEstoque
     /// </summary>
     public partial class ProdutoWindow : Window
     {
+        private int? _fornecedorId;
         private Produto? _produtoEditando;
 
         // Construtor para novo produto
-        public ProdutoWindow()
+        public ProdutoWindow(int? fornecedorId)
         {
             InitializeComponent();
-            CarregarUnidades();
-            chkAtivo.IsChecked = true;
-            this.Title = "Cadastro de Produto";
-            lblTitulo.Content = "Cadastro de Produto";
-        }
-
-        // Construtor para edição
-        public ProdutoWindow(Produto produto) : this()
-        {
-            _produtoEditando = produto;
-            PreencherCampos(produto);
-            this.Title = "Edição de Produto";
-            lblTitulo.Content = "Edição de Produto";
-        }
-
-        private void CarregarUnidades()
-        {
+            DataObject.AddPastingHandler(txtQtdeMinima, TxtQtdeMinima_Pasting);
+            DataObject.AddPastingHandler(txtQtdeTotal, TxtQtdeTotal_Pasting);
+            _fornecedorId = fornecedorId;
+            _produtoEditando = null;
             try
             {
-                using var db = new EstoqueContext();
-                List<TipoUnidade> lista = [new TipoUnidade() { Id = 0, Nome = "Selecione uma unidade" },
-                    .. db.TiposUnidades.Select(u => new TipoUnidade() { Id = u.Id, Nome = u.Nome }).OrderBy(u => u.Nome).ToList()
-                ];
-                cbUnidade.ItemsSource = lista;
+                cbFornecedor.ItemsSource = EstoqueEntityManager.ObterFornecedores()
+                            .Select(p => new IdNomeViewModel(p))
+                            .OrderBy(p => p.Nome).ToList();
+                cbFornecedor.DisplayMemberPath = "Nome";
+                cbFornecedor.SelectedValuePath = "Id";
+                cbFornecedor.SelectedIndex = 0;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Erro ao carregar fornecedores: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            if (_fornecedorId.HasValue && _fornecedorId.Value > 0)
+            {
+                var fornecedor = EstoqueEntityManager.ObterFornecedorPorId(_fornecedorId.Value);
+                if (fornecedor != null)
+                {
+                    cbFornecedor.SelectedValue = fornecedor.Id;
+                }
+                else
+                {
+                    _fornecedorId = null;
+                    MessageBox.Show("Fornecedor não encontrado.", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            try
+            {
+                cbUnidade.ItemsSource = EstoqueEntityManager.ObterTiposUnidades()
+                            .Select(t => new IdNomeViewModel(t))
+                            .OrderBy(t => t.Nome).ToList();
                 cbUnidade.DisplayMemberPath = "Nome";
                 cbUnidade.SelectedValuePath = "Id";
                 cbUnidade.SelectedIndex = 0;
@@ -58,27 +70,83 @@ namespace ControleEstoque
             {
                 MessageBox.Show($"Erro ao carregar unidades: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+            txtQtdeTotal.IsEnabled = true;
+            txtQtdeTotal.IsReadOnly = false;
+            chkAtivo.IsChecked = true;
+            txtQtdeMinima.Text = "0";
+            txtQtdeTotal.Text = "0";
+            this.Title = "Cadastro de Produto";
+            lblTitulo.Content = "Cadastro de Produto";
+        }
+
+        // Construtor para edição
+        public ProdutoWindow(int? fornecedorId, Produto produto) : this(fornecedorId)
+        {
+            _produtoEditando = produto;
+            this.Title = "Edição de Produto";
+            lblTitulo.Content = "Edição de Produto";
+            PreencherCampos(produto);
         }
 
         private void PreencherCampos(Produto produto)
         {
-            txtNome.Text = produto.Nome;
-            cbUnidade.SelectedValue = produto.TipoUnidade.Id;
-            txtPrecoUnidade.Text = produto.PrecoUnidade.ToString("F2");
-            lblQuantidadeTotal.Content = produto.QuantidadeTotal.ToString();
+            txtQtdeTotal.IsEnabled = false;
+            txtQtdeTotal.IsReadOnly = true;
+            txtCodigo.Text = produto.Codigo;
+            txtModelo.Text = produto.Modelo;
+            txtFio.Text = produto.Fio;
+            txtMilimetros.Text = produto.Milimetros;
+            txtTamanho.Text = produto.Tamanho;
+            txtQtdeMinima.Text = produto.QuantidadeMinima.ToString();
+            cbUnidade.SelectedValue = produto.TipoUnidadeId;
+            cbFornecedor.SelectedValue = produto.FornecedorId;
+            txtQtdeTotal.Text = produto.QuantidadeTotal.ToString();
             chkAtivo.IsChecked = produto.Ativo;
             lblAlteracao.Content = produto.Alteracao.ToString("dd/MM/yyyy HH:mm");
             txtDescricao.Text = produto.Descricao;
         }
 
+        private void RetornarCampos(ref Produto produto, int qtdeMinima, int tipounidadeid, int fornecedorid)
+        {
+            produto.Codigo = txtCodigo.Text;
+            produto.Modelo = txtModelo.Text;
+            produto.Fio = txtFio.Text;
+            produto.Milimetros = txtMilimetros.Text;
+            produto.Tamanho = txtTamanho.Text;
+            produto.QuantidadeMinima = qtdeMinima;
+            produto.TipoUnidadeId = tipounidadeid;
+            produto.FornecedorId = fornecedorid;
+            produto.Ativo = chkAtivo.IsChecked ?? false;
+            produto.Alteracao = DateTime.UtcNow.AddHours(-3);
+            produto.Descricao = txtDescricao.Text.Trim();
+        }
+
         private void BtnSalvar_Click(object sender, RoutedEventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(txtNome.Text))
+            if (string.IsNullOrWhiteSpace(txtCodigo.Text))
             {
-                MessageBox.Show("Digite o nome do produto.", "Atenção", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Digite o código do produto.", "Atenção", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
-            var tipoUnidadeSelecionado = cbUnidade.SelectedItem as TipoUnidade;
+
+            if (string.IsNullOrWhiteSpace(txtModelo.Text))
+            {
+                MessageBox.Show("Digite o modelo do produto.", "Atenção", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            var fornecedorSelecionado = cbFornecedor.SelectedItem as IdNomeViewModel;
+            if (fornecedorSelecionado == null)
+            {
+                MessageBox.Show("Selecione um fornecedor.", "Atenção", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            if (fornecedorSelecionado.Id < 1) {
+                MessageBox.Show("Selecione um fornecedor válido.", "Atenção", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            
+            var tipoUnidadeSelecionado = cbUnidade.SelectedItem as IdNomeViewModel;
             if (tipoUnidadeSelecionado == null)
             {
                 MessageBox.Show("Selecione uma unidade de medida.", "Atenção", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -89,67 +157,113 @@ namespace ControleEstoque
                 return;
             }
 
-            string precoUnidadeStr = txtPrecoUnidade.Text?.Trim() ?? "";
-
-
-            if (precoUnidadeStr.IndexOf(',') >= 0 && precoUnidadeStr.IndexOf('.') >= 0)
+            int quantidadeMinima = 0;
+            if (string.IsNullOrWhiteSpace(txtQtdeMinima.Text) || !int.TryParse(txtQtdeMinima.Text.Trim(), out quantidadeMinima))
             {
-                if (precoUnidadeStr.IndexOf(',') < precoUnidadeStr.IndexOf('.'))
-                {
-                    precoUnidadeStr = precoUnidadeStr.Replace(".", "").Replace(',', '.'); // Converte vírgula para ponto
-                }
+                quantidadeMinima = 0;
             }
-            else if (precoUnidadeStr.IndexOf(',') >= 0)
+            if (quantidadeMinima < 0)
             {
-                precoUnidadeStr = precoUnidadeStr.Replace(',', '.'); // Converte vírgula para ponto
+                quantidadeMinima = 0;
             }
 
-            if (!decimal.TryParse(precoUnidadeStr, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal precoUnidade))
+            int quantidadeTotal = 0;
+            if (string.IsNullOrWhiteSpace(txtQtdeTotal.Text) || !int.TryParse(txtQtdeTotal.Text.Trim(), out quantidadeTotal))
             {
-                precoUnidade = 0;
+                quantidadeTotal = 0;
+            }
+            if (quantidadeTotal < 0)
+            {
+                quantidadeTotal = 0;
             }
 
             try
             {
-                using var db = new EstoqueContext();
-
+                Produto produto = new();
                 if (_produtoEditando == null)
                 {
                     // Novo produto
-                    var produto = new Produto
-                    {
-                        Nome = txtNome.Text.Trim(),
-                        Descricao = txtDescricao.Text.Trim(),
-                        TipoUnidade = tipoUnidadeSelecionado,
-                        PrecoUnidade = precoUnidade,
-                        QuantidadeTotal = 0,
-                        Ativo = chkAtivo.IsChecked ?? false,
-                        Alteracao = DateTime.UtcNow.AddHours(-3)
-                    };
-                    db.Produtos.Add(produto);
+                    produto = new();
                 }
                 else
                 {
-                    // Editar produto existente
-                    var produto = db.Produtos.Find(_produtoEditando.Id);
-                    if (produto == null)
+                    var produtoExiste = EstoqueEntityManager.ObterProdutoPorId(_produtoEditando.Id);
+                    if (produtoExiste == null)
                     {
                         MessageBox.Show("Produto não encontrado.", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
                         return;
                     }
-                    produto.Nome = txtNome.Text.Trim();
-                    produto.PrecoUnidade = precoUnidade;
-                    produto.Ativo = chkAtivo.IsChecked ?? false;
-                    produto.Alteracao = DateTime.UtcNow.AddHours(-3);
-                    produto.Descricao = txtDescricao.Text.Trim();
-                    produto.TipoUnidade = tipoUnidadeSelecionado;
+                    produto = produtoExiste;
+                }
+                RetornarCampos(ref produto, quantidadeMinima, tipoUnidadeSelecionado.Id, fornecedorSelecionado.Id);
+
+                if (EstoqueEntityManager.ExisteProdutoCodigo(produto.Codigo, produto.FornecedorId, _produtoEditando?.Id))
+                {
+                    MessageBox.Show("Já existe um produto cadastrado com este código para o fornecedor selecionado.", "Atenção", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
                 }
 
-                db.SaveChanges();
+                if (EstoqueEntityManager.ExisteProdutoFioModeloMilimetrosTamanho(produto.Fio, produto.Modelo, produto.Milimetros, produto.Tamanho, produto.FornecedorId, _produtoEditando?.Id))
+                {
+                    MessageBox.Show("Já existe um produto cadastrado com este fio, modelo, milímetros e tamanho para o fornecedor selecionado.", "Atenção", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
 
-                MessageBox.Show("Produto salvo com sucesso!", "Sucesso", MessageBoxButton.OK, MessageBoxImage.Information);
-                DialogResult = true;
-                Close();
+                if (EstoqueEntityManager.LancarProduto(produto))
+                {
+                    if (_produtoEditando == null)
+                    {
+                        if (quantidadeTotal > 0)
+                        {
+                            var produtoAdicionado = EstoqueEntityManager.ObterProdutoPorCodigoFornecedorId(produto.Codigo, produto.FornecedorId);
+                            if (produtoAdicionado != null)
+                            {
+                                Estoque estoque = new Estoque
+                                {
+                                    ProdutoId = produtoAdicionado.Id,
+                                    Quantidade = quantidadeTotal,
+                                    DataEntradaSaida = DateTime.UtcNow.AddHours(-3),
+                                    Entrada = true,
+                                    Observacao = "Estoque inicial do produto."
+                                };
+                                if (EstoqueEntityManager.LancarEstoque(estoque))
+                                {
+                                    MessageBox.Show("Produto e estoque cadastrado com sucesso!", "Sucesso", MessageBoxButton.OK, MessageBoxImage.Information);
+                                    DialogResult = true;
+                                    Close();
+                                }
+                                else
+                                {
+                                    MessageBox.Show("Produto cadastrado com sucesso, porém houve um erro ao cadastrar o estoque.", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+                                    DialogResult = true;
+                                    Close();
+                                }
+                            }
+                            else
+                            {
+                                MessageBox.Show("Erro ao localizar o produto cadastrado ao tentar cadastrar o estoque. Verifique na tabela de produtos se o produto foi cadastrado corretamente.", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+                                DialogResult = true;
+                                Close();
+                            }
+                        }
+                        else
+                        {
+                            MessageBox.Show("Produto cadastrado com sucesso!", "Sucesso", MessageBoxButton.OK, MessageBoxImage.Information);
+                            DialogResult = true;
+                            Close();
+                        }
+                    }
+                    else
+                    {
+                        MessageBox.Show("Produto salvo com sucesso!", "Sucesso", MessageBoxButton.OK, MessageBoxImage.Information);
+                        DialogResult = true;
+                        Close();
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("Erro ao salvar produto. Verifique os dados e tente novamente.", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
             catch (Exception ex)
             {
@@ -162,10 +276,42 @@ namespace ControleEstoque
             Close();
         }
 
-        private void TxtPrecoUnidade_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        private void TxtQtdeMinima_PreviewTextInput(object sender, TextCompositionEventArgs e)
         {
-            Regex regex = new Regex(@"^[0-9.,]+$");
-            e.Handled = !regex.IsMatch(e.Text);
+            e.Handled = !Regex.IsMatch(e.Text, @"^\d+$");
+        }
+
+        private void TxtQtdeTotal_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            e.Handled = !Regex.IsMatch(e.Text, @"^\d+$");
+        }
+
+        private void TxtQtdeMinima_Pasting(object sender, DataObjectPastingEventArgs e)
+        {
+            if (e.DataObject.GetDataPresent(typeof(string)))
+            {
+                string texto = (string)e.DataObject.GetData(typeof(string));
+                if (!Regex.IsMatch(texto, @"^\d*$")) // Permite vazio ou só dígitos
+                    e.CancelCommand();
+            }
+            else
+            {
+                e.CancelCommand();
+            }
+        }
+
+        private void TxtQtdeTotal_Pasting(object sender, DataObjectPastingEventArgs e)
+        {
+            if (e.DataObject.GetDataPresent(typeof(string)))
+            {
+                string texto = (string)e.DataObject.GetData(typeof(string));
+                if (!Regex.IsMatch(texto, @"^\d*$")) // Permite vazio ou só dígitos
+                    e.CancelCommand();
+            }
+            else
+            {
+                e.CancelCommand();
+            }
         }
     }
 }
