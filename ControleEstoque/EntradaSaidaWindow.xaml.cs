@@ -364,15 +364,14 @@ namespace ControleEstoque
                 }
                 if (IdEstoque > 0)
                 {
-                    if (Estoque == null)
+                    Estoque? estoque = EstoqueEntityManager.ObterEstoquePorId(IdEstoque);
+                    if (estoque == null)
                     {
-                        using var context1 = new EstoqueContext();
-                        var estoque = context1.Estoques.FirstOrDefault(e => e.Id == IdEstoque);
-                        if (estoque == null)
-                        {
-                            MessageBox.Show("Registro não encontrado.");
-                            return;
-                        }
+                        MessageBox.Show("Registro não encontrado.", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+                        return;
+                    }
+                    else
+                    {
                         Estoque = estoque;
                     }
 

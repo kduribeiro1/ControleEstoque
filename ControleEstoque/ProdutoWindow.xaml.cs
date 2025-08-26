@@ -197,15 +197,9 @@ namespace ControleEstoque
                 }
                 RetornarCampos(ref produto, quantidadeMinima, tipoUnidadeSelecionado.Id, fornecedorSelecionado.Id);
 
-                if (EstoqueEntityManager.ExisteProdutoCodigo(produto.Codigo, produto.FornecedorId, _produtoEditando?.Id))
+                if (EstoqueEntityManager.ExisteProduto(produto.Codigo, produto.Fio, produto.Modelo, produto.Milimetros, produto.Tamanho, produto.FornecedorId, _produtoEditando?.Id))
                 {
-                    MessageBox.Show("Já existe um produto cadastrado com este código para o fornecedor selecionado.", "Atenção", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
-
-                if (EstoqueEntityManager.ExisteProdutoFioModeloMilimetrosTamanho(produto.Fio, produto.Modelo, produto.Milimetros, produto.Tamanho, produto.FornecedorId, _produtoEditando?.Id))
-                {
-                    MessageBox.Show("Já existe um produto cadastrado com este fio, modelo, milímetros e tamanho para o fornecedor selecionado.", "Atenção", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBox.Show("Já existe um produto cadastrado com estes dados para o fornecedor selecionado.", "Atenção", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
 
@@ -215,7 +209,7 @@ namespace ControleEstoque
                     {
                         if (quantidadeTotal > 0)
                         {
-                            var produtoAdicionado = EstoqueEntityManager.ObterProdutoPorCodigoFornecedorId(produto.Codigo, produto.FornecedorId);
+                            var produtoAdicionado = EstoqueEntityManager.ObterProdutoPorDadosFornecedorId(produto.Codigo, produto.Fio, produto.Modelo, produto.Milimetros, produto.Tamanho, produto.FornecedorId);
                             if (produtoAdicionado != null)
                             {
                                 Estoque estoque = new Estoque

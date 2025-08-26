@@ -124,10 +124,8 @@ namespace ControleEstoque
                 idproduto = null;
             }
             EntradaSaidaWindow entradaSaidaWindow = new(_fornecedorId, idproduto);
-            if (entradaSaidaWindow.ShowDialog() == true)
-            {
-                CarregarEstoque();
-            }
+            entradaSaidaWindow.ShowDialog();
+            CarregarEstoque();
         }
         
         private void CarregarEstoque()
@@ -155,10 +153,8 @@ namespace ControleEstoque
                 {
                     int idEstoque = itemSelecionado.Id;
                     EntradaSaidaWindow entradaSaidaWindow = new(_fornecedorId, idEstoque, true);
-                    if (entradaSaidaWindow.ShowDialog() == true)
-                    {
-                        CarregarEstoque();
-                    }
+                    entradaSaidaWindow.ShowDialog();
+                    CarregarEstoque();
                 }
                 else
                 {
@@ -181,33 +177,11 @@ namespace ControleEstoque
                     int idEstoque = itemSelecionado.Id;
                     if (MessageBox.Show("Tem certeza que deseja deletar este item?", "Confirmação", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
                     {
-                        using var context = new EstoqueContext();
-                        var estoque = context.Estoques.Include(p => p.Produto).Where(p => p.Id == idEstoque).FirstOrDefault();
-                        if (estoque != null)
+                        if (EstoqueEntityManager.DeletarEstoque(idEstoque))
                         {
-                            Produto? produtoEdt = estoque.Produto;
-
-                            if (produtoEdt != null)
-                            {
-                                if (estoque.Entrada)
-                                {
-                                    produtoEdt.QuantidadeTotal -= estoque.Quantidade;
-                                }
-                                else
-                                {
-                                    produtoEdt.QuantidadeTotal += estoque.Quantidade;
-                                }
-                                produtoEdt.Alteracao = DateTime.Now;
-                                context.Produtos.Update(produtoEdt);
-                            }
-                            context.Estoques.Remove(estoque);
-                            context.SaveChanges();
-                            CarregarEstoque();
+                            MessageBox.Show("Item deletado com sucesso.", "Sucesso", MessageBoxButton.OK, MessageBoxImage.Information);
                         }
-                        else
-                        {
-                            MessageBox.Show("Item não encontrado.", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
-                        }
+                        CarregarEstoque();
                     }
                 }
                 else
@@ -244,8 +218,8 @@ namespace ControleEstoque
                 var headerRow = sheet.CreateRow(0);
                 headerRow.CreateCell(0).SetCellValue("Id");
                 headerRow.CreateCell(1).SetCellValue("Id Produto");
-                headerRow.CreateCell(2).SetCellValue("Código Produto");
-                headerRow.CreateCell(3).SetCellValue("Modelo Produto");
+                headerRow.CreateCell(2).SetCellValue("Modelo Produto");
+                headerRow.CreateCell(3).SetCellValue("Código Produto");
                 headerRow.CreateCell(4).SetCellValue("Fio Produto");
                 headerRow.CreateCell(5).SetCellValue("Milímetro Produto");
                 headerRow.CreateCell(6).SetCellValue("Tamanho Produto");
@@ -262,8 +236,8 @@ namespace ControleEstoque
                     var row = sheet.CreateRow(rowIndex++);
                     row.CreateCell(0).SetCellValue(estoque.Id);
                     row.CreateCell(1).SetCellValue(estoque.ProdutoId);
-                    row.CreateCell(2).SetCellValue(estoque.ProdutoCodigo);
-                    row.CreateCell(3).SetCellValue(estoque.ProdutoModelo);
+                    row.CreateCell(2).SetCellValue(estoque.ProdutoModelo);
+                    row.CreateCell(3).SetCellValue(estoque.ProdutoCodigo);
                     row.CreateCell(4).SetCellValue(estoque.ProdutoFio);
                     row.CreateCell(5).SetCellValue(estoque.ProdutoMilimetro);
                     row.CreateCell(6).SetCellValue(estoque.ProdutoTamanho);

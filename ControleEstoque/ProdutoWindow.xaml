@@ -40,8 +40,8 @@
                 <RowDefinition Height="25" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
-            <TextBlock Text="Código:" Grid.Row="0" VerticalAlignment="Center" />
-            <TextBox x:Name="txtCodigo" Grid.Row="1" VerticalContentAlignment="Center" />
+            <TextBlock Text="Modelo:" Grid.Row="0" VerticalAlignment="Center" />
+            <TextBox x:Name="txtModelo" Grid.Row="1" VerticalContentAlignment="Center" />
         </Grid>
 
         <Grid Grid.Column="3" Grid.Row="3">
@@ -49,8 +49,8 @@
                 <RowDefinition Height="25" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
-            <TextBlock Text="Modelo:" Grid.Row="0" VerticalAlignment="Center" />
-            <TextBox x:Name="txtModelo" Grid.Row="1" VerticalContentAlignment="Center" />
+            <TextBlock Text="Código:" Grid.Row="0" VerticalAlignment="Center" />
+            <TextBox x:Name="txtCodigo" Grid.Row="1" VerticalContentAlignment="Center" />
         </Grid>
 
         <Grid Grid.Column="1" Grid.Row="5">

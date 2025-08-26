@@ -41,11 +41,45 @@
             <ComboBox x:Name="cbProduto" DisplayMemberPath="Nome" SelectedValuePath="Id" SelectionChanged="CbProduto_SelectionChanged" Grid.Column="4" VerticalContentAlignment="Center" FontSize="14" />
         </Grid>
         <Grid Grid.Column="1" Grid.Row="5">
-            <ListView x:Name="lstEstoque">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="5" />
+                <ColumnDefinition Width="100" />
+                <ColumnDefinition Width="5" />
+                <ColumnDefinition Width="100" />
+                <ColumnDefinition Width="5" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="5" />
+                <RowDefinition Height="40" />
+            </Grid.RowDefinitions>
+            <ListView x:Name="lstEstoque" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="7">
+                <ListView.ItemContainerStyle>
+                    <Style TargetType="ListViewItem">
+                        <Style.Triggers>
+                            <!-- Vermelho -->
+                            <DataTrigger Value="Saída">
+                                <DataTrigger.Binding>
+                                    <Binding Path="TipoMovimento"/>
+                                </DataTrigger.Binding>
+                                <Setter Property="Foreground" Value="#FFDA0000"/>
+                            </DataTrigger>
+                            <!-- Amarelo -->
+                            <DataTrigger Value="Entrada">
+                                <DataTrigger.Binding>
+                                    <Binding Path="TipoMovimento"/>
+                                </DataTrigger.Binding>
+                                <Setter Property="Foreground" Value="green"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ListView.ItemContainerStyle>
                 <ListView.View>
                     <GridView>
-                        <GridViewColumn Header="Código" DisplayMemberBinding="{Binding ProdutoCodigo}" Width="150"/>
                         <GridViewColumn Header="Modelo" DisplayMemberBinding="{Binding ProdutoModelo}" Width="150"/>
+                        <GridViewColumn Header="Código" DisplayMemberBinding="{Binding ProdutoCodigo}" Width="150"/>
                         <GridViewColumn Header="Fio" DisplayMemberBinding="{Binding ProdutoFio}" Width="150"/>
                         <GridViewColumn Header="Milímetro" DisplayMemberBinding="{Binding ProdutoMilimetro}" Width="150"/>
                         <GridViewColumn Header="Tamanho" DisplayMemberBinding="{Binding ProdutoTamanho}" Width="150"/>
@@ -58,6 +92,35 @@
                     </GridView>
                 </ListView.View>
             </ListView>
+            <Label Content="Legenda:" Grid.Row="2" Grid.Column="0" VerticalContentAlignment="Center" HorizontalContentAlignment="Right"/>
+            <Grid Grid.Row="2" Grid.Column="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="20" />
+                    <ColumnDefinition Width="5" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="6" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <Rectangle Grid.Column="0" Grid.Row="1" Fill="Green" RadiusX="2" RadiusY="2"/>
+                <TextBlock Grid.Column="2" Grid.Row="0" Grid.RowSpan="3" Text="Entrada" VerticalAlignment="Center" Foreground="Green" TextTrimming="CharacterEllipsis"/>
+            </Grid>
+            <Grid Grid.Row="2" Grid.Column="4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="20" />
+                    <ColumnDefinition Width="5" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="6" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <Rectangle Grid.Column="0" Grid.Row="1" Fill="#FFDA0000" RadiusX="2" RadiusY="2"/>
+                <TextBlock Grid.Column="2" Grid.Row="0" Grid.RowSpan="3" Text="Saída" VerticalAlignment="Center" Foreground="#FFDA0000" TextTrimming="CharacterEllipsis"/>
+            </Grid>
         </Grid>
         <Grid Grid.Column="1" Grid.Row="7">
             <Grid.ColumnDefinitions>

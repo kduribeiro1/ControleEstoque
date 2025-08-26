@@ -112,10 +112,10 @@
                     </ListView.ItemContainerStyle>
                     <ListView.View>
                         <GridView>
-                            <GridViewColumn Header="Cód." DisplayMemberBinding="{Binding Codigo}" Width="100"/>
                             <GridViewColumn Header="Modelo" DisplayMemberBinding="{Binding Modelo}" Width="150"/>
+                            <GridViewColumn Header="Cód." DisplayMemberBinding="{Binding Codigo}" Width="100"/>
                             <GridViewColumn Header="Fio" DisplayMemberBinding="{Binding Fio}" Width="100"/>
-                            <GridViewColumn Header="Milímetro" DisplayMemberBinding="{Binding Milimetros}" Width="100"/>
+                            <GridViewColumn Header="Milímetros" DisplayMemberBinding="{Binding Milimetros}" Width="100"/>
                             <GridViewColumn Header="Tamanho" DisplayMemberBinding="{Binding Tamanho}" Width="100"/>
                             <GridViewColumn Header="Fornecedor" DisplayMemberBinding="{Binding FornecedorNome}" Width="150"/>
                             <GridViewColumn Header="Unidade" DisplayMemberBinding="{Binding TipoUnidadeNome}" Width="100"/>
@@ -126,7 +126,7 @@
                 </ListView>
 
                 <Label Content="Legenda:" Grid.Row="2" Grid.Column="0" VerticalContentAlignment="Center" HorizontalContentAlignment="Right"/>
-                <Grid Grid.Row="2" Grid.Column="2">
+                <Grid Grid.Row="2" Grid.Column="2" ToolTip="Possui estoque acima de 15% para atingir a quantidade mínima definida">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="20" />
                         <ColumnDefinition Width="5" />
@@ -137,10 +137,10 @@
                         <RowDefinition Height="6" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <Rectangle Grid.Column="0" Grid.Row="1" Fill="Black" RadiusX="2" RadiusY="2"/>
+                    <Rectangle Grid.Column="0" Grid.Row="1" Fill="Black" RadiusX="2" RadiusY="2" ToolTip="Possui estoque acima de 15% para atingir a quantidade mínima definida"/>
                     <TextBlock Grid.Column="2" Grid.Row="0" Grid.RowSpan="3" Text="Possui estoque disponível" ToolTip="Possui estoque acima de 15% para atingir a quantidade mínima definida" VerticalAlignment="Center" Foreground="Black" TextTrimming="CharacterEllipsis"/>
                 </Grid>
-                <Grid Grid.Row="2" Grid.Column="4">
+                <Grid Grid.Row="2" Grid.Column="4" ToolTip="Falta 15% ou menos para atingir a quantidade mínima definida">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="20" />
                         <ColumnDefinition Width="5" />
@@ -151,10 +151,10 @@
                         <RowDefinition Height="6" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <Rectangle Grid.Column="0" Grid.Row="1" Fill="#FFE89600" RadiusX="2" RadiusY="2"/>
+                    <Rectangle Grid.Column="0" Grid.Row="1" Fill="#FFE89600" RadiusX="2" RadiusY="2" ToolTip="Falta 15% ou menos para atingir a quantidade mínima definida"/>
                     <TextBlock Grid.Column="2" Grid.Row="0" Grid.RowSpan="3" Text="Próximo da quantidade mínima" ToolTip="Falta 15% ou menos para atingir a quantidade mínima definida" VerticalAlignment="Center" Foreground="#FFE89600" TextTrimming="CharacterEllipsis"/>
                 </Grid>
-                <Grid Grid.Row="2" Grid.Column="6">
+                <Grid Grid.Row="2" Grid.Column="6" ToolTip="O estoque atingiu ou está abaixo da quantidade mínima definida">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="20" />
                         <ColumnDefinition Width="5" />
@@ -165,13 +165,13 @@
                         <RowDefinition Height="6" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <Rectangle Grid.Column="0" Grid.Row="1" Fill="#FFDA0000" RadiusX="2" RadiusY="2"/>
+                    <Rectangle Grid.Column="0" Grid.Row="1" Fill="#FFDA0000" RadiusX="2" RadiusY="2" ToolTip="O estoque atingiu ou está abaixo da quantidade mínima definida"/>
                     <TextBlock Grid.Column="2" Grid.Row="0" Grid.RowSpan="3" Text="Quantidade mínima atingida" ToolTip="O estoque atingiu ou está abaixo da quantidade mínima definida" VerticalAlignment="Center" Foreground="#FFDA0000" TextTrimming="CharacterEllipsis"/>
                 </Grid>
                 <Label x:Name="txtQtdeProdutos" Content="Quantidade de Produtos: " Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="3" VerticalContentAlignment="Center" />
                 <Button x:Name="btnAtualizarProdutos" Content="Atualizar Produtos" Click="BtnAtualizarProdutos_Click" Grid.Row="4" Grid.Column="4" />
                 <Button x:Name="btnExportarProdutos" Content="Exportar Produtos" Click="BtnExportarProdutos_Click" Grid.Row="4" Grid.Column="6" />
-            </Grid> 
+            </Grid>
         </Grid>
         <StatusBar x:Name="SttBarDataHora" Grid.Column="1" Grid.Row="7">
             <StatusBarItem Width="100" Margin="10,0,5,0">

@@ -6,6 +6,11 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <SignAssembly>True</SignAssembly>
+    <AssemblyOriginatorKeyFile>ControleEstoqueChave.snk</AssemblyOriginatorKeyFile>
+    <NeutralLanguage>pt-BR</NeutralLanguage>
+    <AssemblyVersion>2.0.0.2</AssemblyVersion>
+    <FileVersion>2.0.0.2</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>

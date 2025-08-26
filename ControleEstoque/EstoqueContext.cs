@@ -35,6 +35,24 @@ namespace ControleEstoque
         public DateTime DataEntradaSaida { get; set; }
         public bool Entrada { get; set; }
         public string Observacao { get; set; } = string.Empty;
+
+
+        public bool UpdateExistente(ref Estoque estoque)
+        {
+            try
+            {
+                estoque.ProdutoId = ProdutoId;
+                estoque.Quantidade = Quantidade;
+                estoque.DataEntradaSaida = DataEntradaSaida;
+                estoque.Entrada = Entrada;
+                estoque.Observacao = Observacao;
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
     }
 
     public class TipoUnidade
@@ -134,7 +152,7 @@ namespace ControleEstoque
             {
                 using var db = new EstoqueContext();
                 return [.. db.TiposUnidades
-                    .Where(t => string.IsNullOrWhiteSpace(nome) || t.Nome.Contains(nome, StringComparison.InvariantCultureIgnoreCase))
+                    .Where(t => string.IsNullOrWhiteSpace(nome) || t.Nome.ToLower().Contains(nome.ToLower()))
                     .OrderBy(t => t.Nome)];
             }
             catch (Exception ex)
@@ -234,15 +252,17 @@ namespace ControleEstoque
             }
         }
 
-        public static List<Fornecedor> ObterFornecedores(bool? ativo = true)
+        public static List<Fornecedor> ObterFornecedores(string? filtro = null, bool? ativo = true)
         {
             try
             {
                 using var db = new EstoqueContext();
                 return db.Fornecedores
                     .OrderBy(f => f.Nome)
-                    .Where(f => !ativo.HasValue || f.Ativo == ativo.Value)
-                    .ToList();
+                    .Where(f => 
+                        (string.IsNullOrWhiteSpace(filtro) || f.Nome.ToLower().Contains(filtro.ToLower())) &&
+                        (!ativo.HasValue || f.Ativo == ativo.Value)
+                    ).ToList();
             }
             catch (Exception ex)
             {
@@ -358,7 +378,7 @@ namespace ControleEstoque
             }
         }
 
-        public static Produto? ObterProdutoPorCodigoFornecedorId(string codigo, int fornecedorId)
+        public static Produto? ObterProdutoPorDadosFornecedorId(string codigo, string fio, string modelo, string milimetros, string tamanho, int fornecedorId)
         {
             try
             {
@@ -366,16 +386,23 @@ namespace ControleEstoque
                 return db.Produtos
                     .Include(p => p.TipoUnidade)
                     .Include(p => p.Fornecedor)
-                    .FirstOrDefault(p => p.Codigo.ToLower() == codigo.ToLower() && p.FornecedorId == fornecedorId);
+                    .FirstOrDefault(p =>
+                        p.Codigo.ToLower() == codigo.ToLower() &&
+                        p.Fio.ToLower() == fio.ToLower() &&
+                        p.Modelo.ToLower() == modelo.ToLower() &&
+                        p.Milimetros.ToLower() == milimetros.ToLower() &&
+                        p.Tamanho.ToLower() == tamanho.ToLower() &&
+                        p.FornecedorId == fornecedorId
+                    );
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Erro ao obter produto por Código e Fornecedor: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Erro ao obter produto: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
                 return null;
             }
         }
 
-        public static List<Produto> ObterProdutosPorCodigo(string codigo, bool? ativo = true)
+        public static List<Produto> ObterProdutosPorDados(string codigo, string fio, string modelo, string milimetros, string tamanho, bool? ativo = true)
         {
             try
             {
@@ -383,9 +410,15 @@ namespace ControleEstoque
                 return db.Produtos
                     .Include(p => p.TipoUnidade)
                     .Include(p => p.Fornecedor)
-                    .OrderBy(p => p.Codigo)
-                    .Where(p => p.Codigo.ToLower() == codigo.ToLower() && (!ativo.HasValue || p.Ativo == ativo.Value))
-                    .ToList();
+                    .OrderBy(p => p.Modelo)
+                    .Where(p =>
+                        p.Codigo.ToLower() == codigo.ToLower() &&
+                        p.Fio.ToLower() == fio.ToLower() &&
+                        p.Modelo.ToLower() == modelo.ToLower() &&
+                        p.Milimetros.ToLower() == milimetros.ToLower() &&
+                        p.Tamanho.ToLower() == tamanho.ToLower() &&
+                        (!ativo.HasValue || p.Ativo == ativo.Value)
+                    ).ToList();
             }
             catch (Exception ex)
             {
@@ -402,7 +435,7 @@ namespace ControleEstoque
                 return db.Produtos
                     .Include(p => p.TipoUnidade)
                     .Include(p => p.Fornecedor)
-                    .OrderBy(p => p.Codigo)
+                    .OrderBy(p => p.Modelo)
                     .Where(p => !ativo.HasValue || p.Ativo == ativo.Value)
                     .ToList();
             }
@@ -422,7 +455,7 @@ namespace ControleEstoque
                     .Include(p => p.TipoUnidade)
                     .Include(p => p.Fornecedor)
                     .Where(p => (!fornecedorId.HasValue || fornecedorId.Value < 1 || p.FornecedorId == fornecedorId.Value) && (!ativo.HasValue || p.Ativo == ativo.Value))
-                    .OrderBy(p => p.Codigo)
+                    .OrderBy(p => p.Modelo)
                     .ToList();
             }
             catch (Exception ex)
@@ -442,7 +475,7 @@ namespace ControleEstoque
                     .Include(p => p.Fornecedor)
                     .Where(p => (!fornecedorId.HasValue || fornecedorId.Value < 1 || p.FornecedorId == fornecedorId.Value) && (!ativo.HasValue || p.Ativo == ativo.Value))
                     .OrderBy(p => p.QuantidadeTotal)
-                    .ThenBy(p => p.Codigo)
+                    .ThenBy(p => p.Modelo)
                     .ToList();
             }
             catch (Exception ex)
@@ -452,7 +485,7 @@ namespace ControleEstoque
             }
         }
 
-        public static List<Produto> ObterProdutosPorFornecedorFiltroOrdemAcabando(int? fornecedorId, string? filtro, bool? ativo = true)
+        public static List<Produto> ObterProdutosPorFornecedorFiltroOrdemAcabando(int? fornecedorId, string? tipofiltro, string? filtro, bool? ativo = true)
         {
             try
             {
@@ -462,20 +495,17 @@ namespace ControleEstoque
                     .Include(p => p.Fornecedor)
                     .Where(p =>
                         (!fornecedorId.HasValue || fornecedorId.Value < 1 || p.FornecedorId == fornecedorId.Value) &&
-                        (string.IsNullOrWhiteSpace(filtro) ||
-                             p.Codigo.Contains(filtro, StringComparison.InvariantCultureIgnoreCase) ||
-                             filtro.Contains(p.Codigo, StringComparison.InvariantCultureIgnoreCase) ||
-                             p.Modelo.Contains(filtro, StringComparison.InvariantCultureIgnoreCase) ||
-                             filtro.Contains(p.Modelo, StringComparison.InvariantCultureIgnoreCase) ||
-                             p.Fio.Contains(filtro, StringComparison.InvariantCultureIgnoreCase) ||
-                             filtro.Contains(p.Fio, StringComparison.InvariantCultureIgnoreCase) ||
-                             p.Milimetros.Contains(filtro, StringComparison.InvariantCultureIgnoreCase) ||
-                             filtro.Contains(p.Milimetros, StringComparison.InvariantCultureIgnoreCase) ||
-                             p.Tamanho.Contains(filtro, StringComparison.InvariantCultureIgnoreCase) ||
-                             filtro.Contains(p.Tamanho, StringComparison.InvariantCultureIgnoreCase)) &&
+                        (string.IsNullOrWhiteSpace(tipofiltro) || string.IsNullOrWhiteSpace(filtro) ||
+                            (tipofiltro.ToLower() == "codigo" && p.Codigo.ToLower().Contains(filtro.ToLower())) ||
+                            (tipofiltro.ToLower() == "modelo" && p.Modelo.ToLower().Contains(filtro.ToLower())) ||
+                            (tipofiltro.ToLower() == "fio" && p.Fio.ToLower().Contains(filtro.ToLower())) ||
+                            (tipofiltro.ToLower() == "milimetros" && p.Milimetros.ToLower().Contains(filtro.ToLower())) ||
+                            (tipofiltro.ToLower() == "tamanho" && p.Tamanho.ToLower().Contains(filtro.ToLower())) ||
+                            (tipofiltro.ToLower() == "tipounidade" && p.TipoUnidade.Nome.ToLower().Contains(filtro.ToLower()))
+                        ) &&
                         (!ativo.HasValue || p.Ativo == ativo.Value))
                     .OrderBy(p => p.QuantidadeTotal)
-                    .ThenBy(p => p.Codigo)
+                    .ThenBy(p => p.Modelo)
                     .ToList();
             }
             catch (Exception ex)
@@ -485,30 +515,13 @@ namespace ControleEstoque
             }
         }
 
-        public static bool ExisteProdutoCodigo(string codigo, int? fornecedorId, int? idatual = null)
+        public static bool ExisteProduto(string codigo, string fio, string modelo, string milimetros, string tamanho, int? fornecedorId, int? idatual = null)
         {
             try
             {
                 using var db = new EstoqueContext();
                 return db.Produtos.Any(p => 
                     p.Codigo.ToLower() == codigo.ToLower() &&
-                    (!fornecedorId.HasValue || p.FornecedorId == fornecedorId.Value) &&
-                    (!idatual.HasValue || p.Id != idatual.Value)
-                );
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Erro ao verificar código do produto: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
-                return true;
-            }
-        }
-
-        public static bool ExisteProdutoFioModeloMilimetrosTamanho(string fio, string modelo, string milimetros, string tamanho, int? fornecedorId, int? idatual = null)
-        {
-            try
-            {
-                using var db = new EstoqueContext();
-                return db.Produtos.Any(p => 
                     p.Fio.ToLower() == fio.ToLower() &&
                     p.Modelo.ToLower() == modelo.ToLower() &&
                     p.Milimetros.ToLower() == milimetros.ToLower() &&
@@ -519,7 +532,7 @@ namespace ControleEstoque
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Erro ao verificar fio, modelo, milímetros e tamanho do produto: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Erro ao verificar se o produto já existe: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
                 return true;
             }
         }
@@ -572,12 +585,13 @@ namespace ControleEstoque
                 }
                 else
                 {
-                    Estoque? estoqueExistente = db.Estoques.Find(estoque.Id);
-                    if (estoqueExistente == null)
+                    Estoque? estExist = db.Estoques.Find(estoque.Id);
+                    if (estExist == null)
                     {
                         MessageBox.Show("Estoque não encontrado.", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
                         return false;
                     }
+                    Estoque estoqueExistente = estExist;
                     Produto? produto = db.Produtos.Find(estoque.ProdutoId);
                     if (produto == null)
                     {
@@ -607,8 +621,16 @@ namespace ControleEstoque
                         return false;
                     }
                     produto.Alteracao = DateTime.Now;
-                    db.Produtos.Update(produto);
-                    db.Estoques.Update(estoque);
+                    if (estoque.UpdateExistente(ref estoqueExistente))
+                    {
+                        db.Produtos.Update(produto);
+                        db.Estoques.Update(estoqueExistente);
+                    }
+                    else
+                    {
+                        MessageBox.Show("Erro ao atualizar os dados do estoque.", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+                        return false;
+                    }
                 }
                 db.SaveChanges();
                 return true;
@@ -619,11 +641,17 @@ namespace ControleEstoque
                 return false;
             }
         }
-        public static bool DeletarEstoque(Estoque estoque)
+        public static bool DeletarEstoque(int idEstoque)
         {
             try
             {
                 using var db = new EstoqueContext();
+                Estoque? estoque = db.Estoques.Find(idEstoque);
+                if (estoque == null)
+                {
+                    MessageBox.Show("Estoque não encontrado.", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return false;
+                }
                 Produto? produto = db.Produtos.Find(estoque.ProdutoId);
                 if (produto == null)
                 {
@@ -637,6 +665,11 @@ namespace ControleEstoque
                 else
                 {
                     produto.QuantidadeTotal += estoque.Quantidade;
+                }
+                if (produto.QuantidadeTotal < 0)
+                {
+                    MessageBox.Show("Quantidade total do produto não pode ser negativa.", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return false;
                 }
                 produto.Alteracao = DateTime.Now;
                 db.Produtos.Update(produto);

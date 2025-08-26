@@ -29,14 +29,21 @@ namespace ControleEstoque
         public ProdutosWindow(int? fornecedorId)
         {
             InitializeComponent();
+            _atualizandoTabs = true; // Inicia trava
+
             _fornecedorId = fornecedorId;
             CarregarFornecedoresTabs();
             CarregarProdutos();
+            cbFiltroTipo.SelectedIndex = 0;
+            _atualizandoTabs = false; // Libera trava
         }
 
         private void TxtFiltroNome_TextChanged(object sender, TextChangedEventArgs e)
         {
-            CarregarProdutos(txtFiltroNome.Text);
+            if (_atualizandoTabs)
+                return; // Ignora evento durante atualização das abas
+
+            CarregarProdutos();
         }
 
         private void TabFornecedores_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -53,13 +60,11 @@ namespace ControleEstoque
             {
                 _fornecedorId = null;
             }   
-            CarregarProdutos(txtFiltroNome.Text);
+            CarregarProdutos();
         }
 
         private void CarregarFornecedoresTabs()
         {
-            _atualizandoTabs = true; // Inicia trava
-
             var fornecedores = EstoqueEntityManager.ObterFornecedores();
 
             tabFornecedores.Items.Clear();
@@ -94,14 +99,15 @@ namespace ControleEstoque
                 }
             }
 
-            _atualizandoTabs = false; // Libera trava
         }
 
-        private void CarregarProdutos(string filtro = "")
+        private void CarregarProdutos()
         {
             try
             {
-                lstProdutos.ItemsSource = EstoqueEntityManager.ObterProdutosPorFornecedorFiltroOrdemAcabando(_fornecedorId, filtro, null).Select(p => new ProdutoViewModel(p)).ToList();
+                string? tipofiltro = cbFiltroTipo.SelectedValue as string;
+                string? filtro = txtFiltroNome?.Text;
+                lstProdutos.ItemsSource = EstoqueEntityManager.ObterProdutosPorFornecedorFiltroOrdemAcabando(_fornecedorId, tipofiltro, filtro, null).Select(p => new ProdutoViewModel(p)).ToList();
             }
             catch (Exception ex)
             {
@@ -114,7 +120,7 @@ namespace ControleEstoque
             ProdutoWindow produtoWindow = new ProdutoWindow(_fornecedorId);
             if (produtoWindow.ShowDialog() == true)
             {
-                CarregarProdutos(txtFiltroNome.Text);
+                CarregarProdutos();
             }
         }
 
@@ -139,7 +145,7 @@ namespace ControleEstoque
                 ProdutoWindow produtoWindow = new ProdutoWindow(_fornecedorId, produto);
                 if (produtoWindow.ShowDialog() == true)
                 {
-                    CarregarProdutos(txtFiltroNome.Text);
+                    CarregarProdutos();
                 }
             }
             catch (Exception ex)
@@ -173,7 +179,7 @@ namespace ControleEstoque
                                     if (EstoqueEntityManager.DeletarProduto(produto))
                                     {
                                         MessageBox.Show("Produto e estoques deletados com sucesso.", "Sucesso", MessageBoxButton.OK, MessageBoxImage.Information);
-                                        CarregarProdutos(txtFiltroNome.Text);
+                                        CarregarProdutos();
                                         return;
                                     }
                                     else
@@ -199,7 +205,7 @@ namespace ControleEstoque
                             if (EstoqueEntityManager.DeletarProduto(produto))
                             {
                                 MessageBox.Show("Produto deletado com sucesso.", "Sucesso", MessageBoxButton.OK, MessageBoxImage.Information);
-                                CarregarProdutos(txtFiltroNome.Text);
+                                CarregarProdutos();
                                 return;
                             }
                             else
@@ -225,7 +231,7 @@ namespace ControleEstoque
         {
             try
             {
-                CarregarProdutos(txtFiltroNome.Text);
+                CarregarProdutos();
                 MessageBox.Show("Produtos atualizados com sucesso!", "Sucesso", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
@@ -242,8 +248,8 @@ namespace ControleEstoque
 
                 // Cabeçalho
                 var headerRow = sheet.CreateRow(0);
-                headerRow.CreateCell(0).SetCellValue("Código");
                 headerRow.CreateCell(1).SetCellValue("Modelo");
+                headerRow.CreateCell(0).SetCellValue("Código");
                 headerRow.CreateCell(2).SetCellValue("Fio");
                 headerRow.CreateCell(3).SetCellValue("Milímetros");
                 headerRow.CreateCell(4).SetCellValue("Tamanho");
@@ -255,8 +261,8 @@ namespace ControleEstoque
 
                 // Sugestão: Adicionar exemplos de valores na segunda linha
                 var exampleRow = sheet.CreateRow(1);
-                exampleRow.CreateCell(0).SetCellValue("Código Exemplo");
                 exampleRow.CreateCell(1).SetCellValue("Modelo Exemplo");
+                exampleRow.CreateCell(0).SetCellValue("Código Exemplo");
                 exampleRow.CreateCell(2).SetCellValue("Fio Exemplo");
                 exampleRow.CreateCell(3).SetCellValue("Milímetros Exemplo");
                 exampleRow.CreateCell(4).SetCellValue("Tamanho Exemplo");
@@ -321,8 +327,8 @@ namespace ControleEstoque
                     var row = sheet.GetRow(i);
                     if (row == null) continue;
 
-                    string codigo = row.GetCell(0)?.ToString() ?? "";
-                    string modelo = row.GetCell(1)?.ToString() ?? "";
+                    string modelo = row.GetCell(0)?.ToString() ?? "";
+                    string codigo = row.GetCell(1)?.ToString() ?? "";
                     string fio = row.GetCell(2)?.ToString() ?? "";
                     string milimetros = row.GetCell(3)?.ToString() ?? "";
                     string tamanho = row.GetCell(4)?.ToString() ?? "";
@@ -333,15 +339,14 @@ namespace ControleEstoque
                     string descricao = row.GetCell(9)?.ToString() ?? "";
 
 
-                    if (string.IsNullOrWhiteSpace(codigo) || string.IsNullOrWhiteSpace(codigo))
-                    {
-                        row.CreateCell(10).SetCellValue("Ignorado: Código inválido");
-                        continue;
-                    }
-
                     if (string.IsNullOrWhiteSpace(modelo) || string.IsNullOrWhiteSpace(modelo))
                     {
                         row.CreateCell(10).SetCellValue("Ignorado: Modelo inválido");
+                        continue;
+                    }
+                    if (string.IsNullOrWhiteSpace(codigo) || string.IsNullOrWhiteSpace(codigo))
+                    {
+                        row.CreateCell(10).SetCellValue("Ignorado: Código inválido");
                         continue;
                     }
                     if (string.IsNullOrWhiteSpace(unidade))
@@ -407,14 +412,9 @@ namespace ControleEstoque
                         continue;
                     }
 
-                    if (EstoqueEntityManager.ExisteProdutoCodigo(codigo, fornecedorEntity.Id))
+                    if (EstoqueEntityManager.ExisteProduto(codigo, fio, modelo, milimetros, tamanho, fornecedorEntity.Id))
                     {
-                        row.CreateCell(10).SetCellValue("Ignorado: Código já existe");
-                        continue;
-                    }
-                    if (EstoqueEntityManager.ExisteProdutoFioModeloMilimetrosTamanho(fio, modelo, milimetros, tamanho, fornecedorEntity.Id))
-                    {
-                        row.CreateCell(10).SetCellValue("Ignorado: Modelo + Fio + Milímetros + Tamanho já existe");
+                        row.CreateCell(10).SetCellValue("Ignorado: produto já existe");
                         continue;
                     }
 
@@ -464,7 +464,7 @@ namespace ControleEstoque
 
                         if (quantidadeTotal > 0)
                         {
-                            produto = EstoqueEntityManager.ObterProdutoPorCodigoFornecedorId(codigo, fornecedorEntity.Id);
+                            produto = EstoqueEntityManager.ObterProdutoPorDadosFornecedorId(codigo, fio, modelo, milimetros, tamanho, fornecedorEntity.Id);
 
                             if (produto == null)
                             {
@@ -505,7 +505,7 @@ namespace ControleEstoque
                 }
 
                 MessageBox.Show($"{importados} produtos importados com sucesso!", "Sucesso", MessageBoxButton.OK, MessageBoxImage.Information);
-                CarregarProdutos(txtFiltroNome.Text);
+                CarregarProdutos();
 
                 // Salvar planilha com resultados
                 var saveFileDialog = new SaveFileDialog
@@ -546,8 +546,8 @@ namespace ControleEstoque
                 // Cabeçalho
                 var headerRow = sheet.CreateRow(0);
                 headerRow.CreateCell(0).SetCellValue("Id");
-                headerRow.CreateCell(1).SetCellValue("Código");
-                headerRow.CreateCell(2).SetCellValue("Modelo");
+                headerRow.CreateCell(1).SetCellValue("Modelo");
+                headerRow.CreateCell(2).SetCellValue("Código");
                 headerRow.CreateCell(3).SetCellValue("Fio");
                 headerRow.CreateCell(4).SetCellValue("Milímetros");
                 headerRow.CreateCell(5).SetCellValue("Tamanho");
@@ -564,8 +564,8 @@ namespace ControleEstoque
                 {
                     var row = sheet.CreateRow(rowIndex++);
                     row.CreateCell(0).SetCellValue(produto.Id);
-                    row.CreateCell(1).SetCellValue(produto.Codigo);
-                    row.CreateCell(2).SetCellValue(produto.Modelo);
+                    row.CreateCell(1).SetCellValue(produto.Modelo);
+                    row.CreateCell(2).SetCellValue(produto.Codigo);
                     row.CreateCell(3).SetCellValue(produto.Fio);
                     row.CreateCell(4).SetCellValue(produto.Milimetros);
                     row.CreateCell(5).SetCellValue(produto.Tamanho);
@@ -597,6 +597,14 @@ namespace ControleEstoque
             {
                 MessageBox.Show($"Erro ao exportar produtos: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        private void CbFiltroTipo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_atualizandoTabs)
+                return; // Ignora evento durante atualização das abas
+
+            CarregarProdutos();
         }
     }
 }

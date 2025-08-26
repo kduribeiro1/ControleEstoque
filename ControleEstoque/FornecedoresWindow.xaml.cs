@@ -42,7 +42,7 @@ namespace ControleEstoque
         {
             try
             {
-                lstFornecedores.ItemsSource = EstoqueEntityManager.ObterFornecedores(null).Select(f => new FornecedorViewModel(f)).ToList();
+                lstFornecedores.ItemsSource = EstoqueEntityManager.ObterFornecedores(filtro, null).Select(f => new FornecedorViewModel(f)).ToList();
             }
             catch (Exception ex)
             {

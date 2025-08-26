@@ -174,8 +174,8 @@ namespace ControleEstoque
                 // Cabeçalho
                 var headerRow = sheet.CreateRow(0);
                 headerRow.CreateCell(0).SetCellValue("Id");
-                headerRow.CreateCell(1).SetCellValue("Código");
-                headerRow.CreateCell(2).SetCellValue("Modelo");
+                headerRow.CreateCell(1).SetCellValue("Modelo");
+                headerRow.CreateCell(2).SetCellValue("Código");
                 headerRow.CreateCell(3).SetCellValue("Fio");
                 headerRow.CreateCell(4).SetCellValue("Milímetros");
                 headerRow.CreateCell(5).SetCellValue("Tamanho");
@@ -193,8 +193,8 @@ namespace ControleEstoque
                 {
                     var row = sheet.CreateRow(rowIndex++);
                     row.CreateCell(0).SetCellValue(produto.Id);
-                    row.CreateCell(1).SetCellValue(produto.Codigo);
-                    row.CreateCell(2).SetCellValue(produto.Modelo);
+                    row.CreateCell(1).SetCellValue(produto.Modelo);
+                    row.CreateCell(2).SetCellValue(produto.Codigo);
                     row.CreateCell(3).SetCellValue(produto.Fio);
                     row.CreateCell(4).SetCellValue(produto.Milimetros);
                     row.CreateCell(5).SetCellValue(produto.Tamanho);
