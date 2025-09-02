@@ -114,8 +114,16 @@ namespace ControleEstoque
             produto.Milimetros = txtMilimetros.Text;
             produto.Tamanho = txtTamanho.Text;
             produto.QuantidadeMinima = qtdeMinima;
-            produto.TipoUnidadeId = tipounidadeid;
-            produto.FornecedorId = fornecedorid;
+            if (produto.TipoUnidadeId != tipounidadeid)
+            {
+                produto.TipoUnidadeId = tipounidadeid;
+                produto.TipoUnidade = null!;
+            }
+            if (produto.FornecedorId != fornecedorid)
+            {
+                produto.FornecedorId = fornecedorid;
+                produto.Fornecedor = null!;
+            }
             produto.Ativo = chkAtivo.IsChecked ?? false;
             produto.Alteracao = DateTime.UtcNow.AddHours(-3);
             produto.Descricao = txtDescricao.Text.Trim();
