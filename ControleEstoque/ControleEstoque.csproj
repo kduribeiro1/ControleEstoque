@@ -9,8 +9,8 @@
     <SignAssembly>True</SignAssembly>
     <AssemblyOriginatorKeyFile>ControleEstoqueChave.snk</AssemblyOriginatorKeyFile>
     <NeutralLanguage>pt-BR</NeutralLanguage>
-    <AssemblyVersion>2.0.0.5</AssemblyVersion>
-    <FileVersion>2.0.0.5</FileVersion>
+    <AssemblyVersion>2.0.0.6</AssemblyVersion>
+    <FileVersion>2.0.0.6</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
