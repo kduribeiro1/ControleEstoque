@@ -139,6 +139,7 @@ namespace ControleEstoque
                 headerRow.CreateCell(0).SetCellValue("Id");
                 headerRow.CreateCell(1).SetCellValue("Nome");
                 headerRow.CreateCell(2).SetCellValue("Quantidade Mínima");
+                headerRow.CreateCell(3).SetCellValue("Peso Por Unidade (grama)");
 
                 int rowIndex = 1;
                 foreach (var tipo in tipos)
@@ -147,6 +148,7 @@ namespace ControleEstoque
                     row.CreateCell(0).SetCellValue(tipo.Id);
                     row.CreateCell(1).SetCellValue(tipo.Nome);
                     row.CreateCell(2).SetCellValue(tipo.QuantidadeMinima);
+                    row.CreateCell(3).SetCellValue(tipo.PesoUnitarioGrama);
                 }
 
                 var saveFileDialog = new SaveFileDialog

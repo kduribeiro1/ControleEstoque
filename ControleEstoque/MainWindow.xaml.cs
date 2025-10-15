@@ -136,7 +136,27 @@ namespace ControleEstoque
                     .ToList();
 
                 listViewProdutosAcabando.ItemsSource = produtosBaixoEstoque;
-                txtQtdeProdutos.Content = $"Quantidade de Produtos: {produtosBaixoEstoque.Count}";
+                txtQtdeProdutos.Content = $"Quantidade Produtos: {produtosBaixoEstoque.Count}";
+
+                string strPesoTotal = string.Empty;
+                double pesoTotalGramas = produtosBaixoEstoque.Sum(p => (p.QuantidadeTotal * (p.PesoUnitarioGrama > 0 ? p.PesoUnitarioGrama : 1)));
+
+                if (pesoTotalGramas < 1000)
+                {
+                    strPesoTotal = $"{pesoTotalGramas:N3} g";
+                }
+                else if (pesoTotalGramas < 1000000)
+                {
+                    double pesoKg = pesoTotalGramas / 1000;
+                    strPesoTotal = $"{pesoKg:N3} kg";
+                }
+                else
+                {
+                    double pesoToneladas = pesoTotalGramas / 1000000;
+                    strPesoTotal = $"{pesoToneladas:N3} t";
+                }
+
+                txtPesoProdutos.Content = $"Peso Total: {strPesoTotal}";
             }
             catch (Exception ex)
             {
@@ -183,9 +203,10 @@ namespace ControleEstoque
                 headerRow.CreateCell(7).SetCellValue("Unidade");
                 headerRow.CreateCell(8).SetCellValue("Quantidade Total");
                 headerRow.CreateCell(9).SetCellValue("Quantidade Mínima");
-                headerRow.CreateCell(10).SetCellValue("Ativo");
-                headerRow.CreateCell(11).SetCellValue("Alteração");
-                headerRow.CreateCell(12).SetCellValue("Descrição");
+                headerRow.CreateCell(10).SetCellValue("Peso Unidade (grama)");
+                headerRow.CreateCell(11).SetCellValue("Ativo");
+                headerRow.CreateCell(12).SetCellValue("Alteração");
+                headerRow.CreateCell(13).SetCellValue("Descrição");
 
 
                 int rowIndex = 1;
@@ -202,9 +223,10 @@ namespace ControleEstoque
                     row.CreateCell(7).SetCellValue(produto.TipoUnidadeNome);
                     row.CreateCell(8).SetCellValue(produto.QuantidadeTotal);
                     row.CreateCell(9).SetCellValue(produto.QuantidadeMinima);
-                    row.CreateCell(10).SetCellValue(produto.Ativo);
-                    row.CreateCell(11).SetCellValue(produto.Alteracao.ToString("dd/MM/yyyy HH:mm"));
-                    row.CreateCell(12).SetCellValue(produto.Descricao);
+                    row.CreateCell(10).SetCellValue((produto.PesoUnitarioGrama > 0 ? produto.PesoUnitarioGrama : 1));
+                    row.CreateCell(11).SetCellValue(produto.Ativo);
+                    row.CreateCell(12).SetCellValue(produto.Alteracao.ToString("dd/MM/yyyy HH:mm"));
+                    row.CreateCell(13).SetCellValue(produto.Descricao);
                 }
 
                 // Diálogo para salvar arquivo

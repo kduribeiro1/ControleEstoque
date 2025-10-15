@@ -12,6 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Text.RegularExpressions;
+using System.Globalization;
 
 namespace ControleEstoque
 {
@@ -28,6 +29,7 @@ namespace ControleEstoque
         {
             InitializeComponent();
             DataObject.AddPastingHandler(txtQtdeMinima, TxtQtdeMinima_Pasting);
+            DataObject.AddPastingHandler(txtPesoUnitarioGrama, TxtPesoUnitarioGrama_Pasting);
             DataObject.AddPastingHandler(txtQtdeTotal, TxtQtdeTotal_Pasting);
             _fornecedorId = fornecedorId;
             _produtoEditando = null;
@@ -74,6 +76,7 @@ namespace ControleEstoque
             txtQtdeTotal.IsReadOnly = false;
             chkAtivo.IsChecked = true;
             txtQtdeMinima.Text = "0";
+            txtPesoUnitarioGrama.Text = "0";
             txtQtdeTotal.Text = "0";
             this.Title = "Cadastro de Produto";
             lblTitulo.Content = "Cadastro de Produto";
@@ -98,6 +101,7 @@ namespace ControleEstoque
             txtMilimetros.Text = produto.Milimetros;
             txtTamanho.Text = produto.Tamanho;
             txtQtdeMinima.Text = produto.QuantidadeMinima.ToString();
+            txtPesoUnitarioGrama.Text = produto.PesoUnitarioGrama.ToString();
             cbUnidade.SelectedValue = produto.TipoUnidadeId;
             cbFornecedor.SelectedValue = produto.FornecedorId;
             txtQtdeTotal.Text = produto.QuantidadeTotal.ToString();
@@ -106,7 +110,7 @@ namespace ControleEstoque
             txtDescricao.Text = produto.Descricao;
         }
 
-        private void RetornarCampos(ref Produto produto, int qtdeMinima, int tipounidadeid, int fornecedorid)
+        private void RetornarCampos(ref Produto produto, double qtdeMinima, double pesoUnitarioGrama, int tipounidadeid, int fornecedorid)
         {
             produto.Codigo = txtCodigo.Text;
             produto.Modelo = txtModelo.Text;
@@ -114,6 +118,7 @@ namespace ControleEstoque
             produto.Milimetros = txtMilimetros.Text;
             produto.Tamanho = txtTamanho.Text;
             produto.QuantidadeMinima = qtdeMinima;
+            produto.PesoUnitarioGrama = pesoUnitarioGrama;
             if (produto.TipoUnidadeId != tipounidadeid)
             {
                 produto.TipoUnidadeId = tipounidadeid;
@@ -165,8 +170,15 @@ namespace ControleEstoque
                 return;
             }
 
-            int quantidadeMinima = 0;
-            if (string.IsNullOrWhiteSpace(txtQtdeMinima.Text) || !int.TryParse(txtQtdeMinima.Text.Trim(), out quantidadeMinima))
+            double quantidadeMinima = 0;
+            double pesoUnitarioGrama = 0;
+            double quantidadeTotal = 0;
+
+            string qtdeMinimaText = NormalizarDecimal(txtQtdeMinima.Text.Trim());
+            string pesoUnitarioText = NormalizarDecimal(txtPesoUnitarioGrama.Text.Trim());
+            string qtdeTotalText = NormalizarDecimal(txtQtdeTotal.Text.Trim());
+
+            if (string.IsNullOrWhiteSpace(qtdeMinimaText) || !double.TryParse(qtdeMinimaText, NumberStyles.Any, CultureInfo.InvariantCulture, out quantidadeMinima))
             {
                 quantidadeMinima = 0;
             }
@@ -175,8 +187,16 @@ namespace ControleEstoque
                 quantidadeMinima = 0;
             }
 
-            int quantidadeTotal = 0;
-            if (string.IsNullOrWhiteSpace(txtQtdeTotal.Text) || !int.TryParse(txtQtdeTotal.Text.Trim(), out quantidadeTotal))
+            if (string.IsNullOrWhiteSpace(pesoUnitarioText) || !double.TryParse(pesoUnitarioText, NumberStyles.Any, CultureInfo.InvariantCulture, out pesoUnitarioGrama))
+            {
+                pesoUnitarioGrama = 0;
+            }
+            if (pesoUnitarioGrama < 0)
+            {
+                pesoUnitarioGrama = 0;
+            }
+
+            if (string.IsNullOrWhiteSpace(qtdeTotalText) || !double.TryParse(qtdeTotalText, NumberStyles.Any, CultureInfo.InvariantCulture, out quantidadeTotal))
             {
                 quantidadeTotal = 0;
             }
@@ -203,7 +223,7 @@ namespace ControleEstoque
                     }
                     produto = produtoExiste;
                 }
-                RetornarCampos(ref produto, quantidadeMinima, tipoUnidadeSelecionado.Id, fornecedorSelecionado.Id);
+                RetornarCampos(ref produto, quantidadeMinima, pesoUnitarioGrama, tipoUnidadeSelecionado.Id, fornecedorSelecionado.Id);
 
                 if (EstoqueEntityManager.ExisteProduto(produto.Codigo, produto.Fio, produto.Modelo, produto.Milimetros, produto.Tamanho, produto.FornecedorId, _produtoEditando?.Id))
                 {
@@ -280,12 +300,20 @@ namespace ControleEstoque
 
         private void TxtQtdeMinima_PreviewTextInput(object sender, TextCompositionEventArgs e)
         {
-            e.Handled = !Regex.IsMatch(e.Text, @"^\d+$");
+            // Permite apenas dígitos e um separador decimal (vírgula ou ponto)
+            e.Handled = !Regex.IsMatch(e.Text, @"^[\d,.]+$");
         }
 
         private void TxtQtdeTotal_PreviewTextInput(object sender, TextCompositionEventArgs e)
         {
-            e.Handled = !Regex.IsMatch(e.Text, @"^\d+$");
+            // Permite apenas dígitos e um separador decimal (vírgula ou ponto)
+            e.Handled = !Regex.IsMatch(e.Text, @"^[\d,.]+$");
+        }
+
+        private void TxtPesoUnitarioGrama_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            // Permite apenas dígitos e um separador decimal (vírgula ou ponto)
+            e.Handled = !Regex.IsMatch(e.Text, @"^[\d,.]+$");
         }
 
         private void TxtQtdeMinima_Pasting(object sender, DataObjectPastingEventArgs e)
@@ -293,7 +321,23 @@ namespace ControleEstoque
             if (e.DataObject.GetDataPresent(typeof(string)))
             {
                 string texto = (string)e.DataObject.GetData(typeof(string));
-                if (!Regex.IsMatch(texto, @"^\d*$")) // Permite vazio ou só dígitos
+                // Permite vazio ou só dígitos e separador decimal
+                if (!Regex.IsMatch(texto, @"^[\d,.]*$"))
+                    e.CancelCommand();
+            }
+            else
+            {
+                e.CancelCommand();
+            }
+        }
+
+        private void TxtPesoUnitarioGrama_Pasting(object sender, DataObjectPastingEventArgs e)
+        {
+            if (e.DataObject.GetDataPresent(typeof(string)))
+            {
+                string texto = (string)e.DataObject.GetData(typeof(string));
+                // Permite vazio ou só dígitos e separador decimal
+                if (!Regex.IsMatch(texto, @"^[\d,.]*$"))
                     e.CancelCommand();
             }
             else
@@ -307,12 +351,41 @@ namespace ControleEstoque
             if (e.DataObject.GetDataPresent(typeof(string)))
             {
                 string texto = (string)e.DataObject.GetData(typeof(string));
-                if (!Regex.IsMatch(texto, @"^\d*$")) // Permite vazio ou só dígitos
+                // Permite vazio ou só dígitos e separador decimal
+                if (!Regex.IsMatch(texto, @"^[\d,.]*$"))
                     e.CancelCommand();
             }
             else
             {
                 e.CancelCommand();
+            }
+        }
+
+        private string NormalizarDecimal(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input)) return input;
+            int lastComma = input.LastIndexOf(',');
+            int lastDot = input.LastIndexOf('.');
+            if (lastComma == -1 && lastDot == -1)
+                return input; // só dígitos
+            if (lastComma == -1)
+                return input.Replace(",", "").Replace('.', '.'); // só ponto
+            if (lastDot == -1)
+                return input.Replace(".", "").Replace(',', '.'); // só vírgula
+            // ambos presentes
+            if (lastComma > lastDot)
+            {
+                // vírgula é o separador decimal
+                string semPonto = input.Substring(0, lastComma).Replace(".", "");
+                string decimalPart = input.Substring(lastComma + 1);
+                return semPonto + "." + decimalPart;
+            }
+            else
+            {
+                // ponto é o separador decimal
+                string semVirgula = input.Substring(0, lastDot).Replace(",", "");
+                string decimalPart = input.Substring(lastDot + 1);
+                return semVirgula + "." + decimalPart;
             }
         }
     }

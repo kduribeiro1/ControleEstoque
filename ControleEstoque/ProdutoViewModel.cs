@@ -18,8 +18,9 @@ namespace ControleEstoque
         public string FornecedorNome { get; set; } = string.Empty;
         public int TipoUnidadeId { get; set; }
         public string TipoUnidadeNome { get; set; } = string.Empty;
-        public int QuantidadeTotal { get; set; }
-        public int QuantidadeMinima { get; set; }
+        public double QuantidadeTotal { get; set; }
+        public double QuantidadeMinima { get; set; }
+        public double PesoUnitarioGrama { get; set; }
         public string Descricao { get; set; } = string.Empty;
         public string Ativo { get; set; } = string.Empty;
         public DateTime Alteracao { get; set; }
@@ -38,6 +39,7 @@ namespace ControleEstoque
             TipoUnidadeNome = string.Empty;
             QuantidadeTotal = 0;
             QuantidadeMinima = 0;
+            PesoUnitarioGrama = 1;
             Descricao = string.Empty;
             Ativo = string.Empty;
             Alteracao = DateTime.Now;
@@ -57,6 +59,11 @@ namespace ControleEstoque
             TipoUnidadeNome = produto.TipoUnidade.Nome;
             QuantidadeTotal = produto.QuantidadeTotal;
             QuantidadeMinima = produto.QuantidadeMinima > 0 ? produto.QuantidadeMinima : produto.TipoUnidade.QuantidadeMinima;
+            PesoUnitarioGrama = produto.PesoUnitarioGrama > 0 ? produto.PesoUnitarioGrama : produto.TipoUnidade.PesoUnitarioGrama;
+            if (PesoUnitarioGrama <= 0)
+            {
+                PesoUnitarioGrama = 1;
+            }
             Descricao = produto.Descricao ?? string.Empty;
             Ativo = produto.Ativo ? "Sim" : "Não";
             Alteracao = produto.Alteracao;

@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ControleEstoque"
         mc:Ignorable="d"
-        Title="Tipo de Unidade" Height="245" MinHeight="245" Width="400" MinWidth="400" WindowStartupLocation="CenterScreen">
+        Title="Tipo de Unidade" Height="290" MinHeight="290" Width="400" MinWidth="400" WindowStartupLocation="CenterScreen">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="5" />
@@ -17,6 +17,8 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="5" />
             <RowDefinition Height="40" />
+            <RowDefinition Height="5" />
+            <RowDefinition Height="55" />
             <RowDefinition Height="5" />
             <RowDefinition Height="55" />
             <RowDefinition Height="5" />
@@ -45,7 +47,17 @@
             <TextBlock Text="Quantidade Mínima:" Grid.Row="0" VerticalAlignment="Center" />
             <TextBox x:Name="txtQtdeAviso" Grid.Row="1" VerticalContentAlignment="Center" PreviewTextInput="TxtQtdeAviso_PreviewTextInput" />
         </Grid>
-        <Button x:Name="btnFechar" Content="Fechar" Grid.Column="1" Grid.Row="7" Click="BtnFechar_Click"/>
-        <Button x:Name="btnSalvar" Content="Salvar" Grid.Column="3" Grid.Row="7" Click="BtnSalvar_Click"/>
+
+        <Grid Grid.Column="1" Grid.ColumnSpan="3" Grid.Row="7">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="25" />
+                <RowDefinition Height="30" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <TextBlock Text="Peso Unidade (grama):" Grid.Row="0" VerticalAlignment="Center" />
+            <TextBox x:Name="txtPesoUnitarioGrama" Grid.Row="1" VerticalContentAlignment="Center" PreviewTextInput="TxtPesoUnitarioGrama_PreviewTextInput" />
+        </Grid>
+        <Button x:Name="btnFechar" Content="Fechar" Grid.Column="1" Grid.Row="9" Click="BtnFechar_Click"/>
+        <Button x:Name="btnSalvar" Content="Salvar" Grid.Column="3" Grid.Row="9" Click="BtnSalvar_Click"/>
     </Grid>
 </Window>

@@ -85,8 +85,15 @@
                 <RowDefinition Height="25" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
-            <TextBlock Text="Quantidade Mínima: (Não obrigatório)" Grid.Row="0" VerticalAlignment="Center" ToolTip="Caso esse campo não seja preenchido ou definido como 0 (zero), será utilizado a quantidade mínima definida no tipo de unidade selecionado." />
-            <TextBox x:Name="txtQtdeMinima" Grid.Row="1" VerticalContentAlignment="Center" PreviewTextInput="TxtQtdeMinima_PreviewTextInput" ToolTip="Caso esse campo não seja preenchido ou definido como 0 (zero), será utilizado a quantidade mínima definida no tipo de unidade selecionado." />
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="5" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="Quantidade Mínima:" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" ToolTip="Caso esse campo não seja preenchido ou definido como 0 (zero), será utilizado a quantidade mínima definida no tipo de unidade selecionado." />
+            <TextBox x:Name="txtQtdeMinima" Grid.Row="1" Grid.Column="0" VerticalContentAlignment="Center" PreviewTextInput="TxtQtdeMinima_PreviewTextInput" ToolTip="Caso esse campo não seja preenchido ou definido como 0 (zero), será utilizado a quantidade mínima definida no tipo de unidade selecionado." />
+            <TextBlock Text="Peso Unidade (grama):" Grid.Row="0" Grid.Column="2" VerticalAlignment="Center" ToolTip="Caso esse campo não seja preenchido ou definido como 0 (zero), será utilizado o peso definido no tipo de unidade selecionado." />
+            <TextBox x:Name="txtPesoUnitarioGrama" Grid.Row="1" Grid.Column="2" VerticalContentAlignment="Center" PreviewTextInput="TxtPesoUnitarioGrama_PreviewTextInput" ToolTip="Caso esse campo não seja preenchido ou definido como 0 (zero), será utilizado o peso definido no tipo de unidade selecionado." />
         </Grid>
 
         <Grid Grid.Column="1" Grid.Row="9">

@@ -3,6 +3,7 @@ using Microsoft.Win32;
 using NPOI.XSSF.UserModel;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -107,7 +108,30 @@ namespace ControleEstoque
             {
                 string? tipofiltro = cbFiltroTipo.SelectedValue as string;
                 string? filtro = txtFiltroNome?.Text;
-                lstProdutos.ItemsSource = EstoqueEntityManager.ObterProdutosPorFornecedorFiltroOrdemAcabando(_fornecedorId, tipofiltro, filtro, null).Select(p => new ProdutoViewModel(p)).ToList();
+
+                var produtoslst = EstoqueEntityManager.ObterProdutosPorFornecedorFiltroOrdemAcabando(_fornecedorId, tipofiltro, filtro, null).Select(p => new ProdutoViewModel(p)).ToList();
+
+                lstProdutos.ItemsSource = produtoslst;
+                
+                string strPesoTotal = string.Empty;
+                double pesoTotalGramas = produtoslst.Sum(p => (p.QuantidadeTotal * (p.PesoUnitarioGrama > 0 ? p.PesoUnitarioGrama : 1)));
+
+                if (pesoTotalGramas < 1000)
+                {
+                    strPesoTotal = $"{pesoTotalGramas:N3} g";
+                }
+                else if (pesoTotalGramas < 1000000)
+                {
+                    double pesoKg = pesoTotalGramas / 1000;
+                    strPesoTotal = $"{pesoKg:N3} kg";
+                }
+                else
+                {
+                    double pesoToneladas = pesoTotalGramas / 1000000;
+                    strPesoTotal = $"{pesoToneladas:N3} t";
+                }
+
+                lblPesoTotal.Content = $"Peso Total: {strPesoTotal}";
             }
             catch (Exception ex)
             {
@@ -257,7 +281,8 @@ namespace ControleEstoque
                 headerRow.CreateCell(6).SetCellValue("Unidade");
                 headerRow.CreateCell(7).SetCellValue("Quantidade Total");
                 headerRow.CreateCell(8).SetCellValue("Quantidade Mínima");
-                headerRow.CreateCell(9).SetCellValue("Descrição");
+                headerRow.CreateCell(9).SetCellValue("Peso Unidade (grama)");
+                headerRow.CreateCell(10).SetCellValue("Descrição");
 
                 // Sugestão: Adicionar exemplos de valores na segunda linha
                 var exampleRow = sheet.CreateRow(1);
@@ -270,7 +295,8 @@ namespace ControleEstoque
                 exampleRow.CreateCell(6).SetCellValue("Unidade Exemplo");
                 exampleRow.CreateCell(7).SetCellValue("10"); // Quantidade Total Exemplo
                 exampleRow.CreateCell(8).SetCellValue("2"); // Quantidade Mínima Exemplo
-                exampleRow.CreateCell(9).SetCellValue("Descrição Exemplo");
+                exampleRow.CreateCell(9).SetCellValue("0"); // Peso Unidade Exemplo
+                exampleRow.CreateCell(10).SetCellValue("Descrição Exemplo");
 
                 var saveFileDialog = new SaveFileDialog
                 {
@@ -318,8 +344,7 @@ namespace ControleEstoque
                     return;
                 }
                 var headerRow = sheet.GetRow(0);
-                headerRow.CreateCell(10).SetCellValue("Status");
-
+                headerRow.CreateCell(11).SetCellValue("Status");
 
                 int importados = 0;
                 for (int i = 1; i <= sheet.LastRowNum; i++)
@@ -336,28 +361,29 @@ namespace ControleEstoque
                     string unidade = row.GetCell(6)?.ToString() ?? "";
                     string quantidadeTotalStr = row.GetCell(7)?.ToString() ?? "0";
                     string quantidadeMinimaStr = row.GetCell(8)?.ToString() ?? "0";
-                    string descricao = row.GetCell(9)?.ToString() ?? "";
+                    string pesoUnitarioGramaStr = row.GetCell(9)?.ToString() ?? "0";
+                    string descricao = row.GetCell(10)?.ToString() ?? "";
 
 
                     if (string.IsNullOrWhiteSpace(modelo) || string.IsNullOrWhiteSpace(modelo))
                     {
-                        row.CreateCell(10).SetCellValue("Ignorado: Modelo inválido");
+                        row.CreateCell(11).SetCellValue("Ignorado: Modelo inválido");
                         continue;
                     }
                     if (string.IsNullOrWhiteSpace(codigo) || string.IsNullOrWhiteSpace(codigo))
                     {
-                        row.CreateCell(10).SetCellValue("Ignorado: Código inválido");
+                        row.CreateCell(11).SetCellValue("Ignorado: Código inválido");
                         continue;
                     }
                     if (string.IsNullOrWhiteSpace(unidade))
                     {
-                        row.CreateCell(10).SetCellValue("Ignorado: Unidade inválida");
+                        row.CreateCell(11).SetCellValue("Ignorado: Unidade inválida");
                         continue;
                     }
 
                     if (string.IsNullOrWhiteSpace(fornecedor))
                     {
-                        row.CreateCell(10).SetCellValue("Ignorado: Fornecedor inválido");
+                        row.CreateCell(11).SetCellValue("Ignorado: Fornecedor inválido");
                         continue;
                     }
 
@@ -368,7 +394,8 @@ namespace ControleEstoque
                         tipoUnidade = new TipoUnidade
                         {
                             Nome = unidade,
-                            QuantidadeMinima = 0
+                            QuantidadeMinima = 0,
+                            PesoUnitarioGrama = 1
                         };
                         if (EstoqueEntityManager.LancarTipoUnidade(tipoUnidade))
                         {
@@ -420,7 +447,15 @@ namespace ControleEstoque
 
                     string msgStatus = "";
 
-                    if (!int.TryParse(quantidadeTotalStr, out int quantidadeTotal))
+                    double quantidadeTotal = 0;
+                    double quantidadeMinima = 0;
+                    double pesoUnitarioGrama = 0;
+
+                    quantidadeTotalStr = NormalizarDecimal(quantidadeTotalStr);
+                    quantidadeMinimaStr = NormalizarDecimal(quantidadeMinimaStr);
+                    pesoUnitarioGramaStr = NormalizarDecimal(pesoUnitarioGramaStr);
+
+                    if (!double.TryParse(quantidadeTotalStr, NumberStyles.Any, CultureInfo.InvariantCulture, out quantidadeTotal))
                     {
                         quantidadeTotal = 0;
                         msgStatus += "Qtde Total inválida, definida como 0;";
@@ -431,7 +466,7 @@ namespace ControleEstoque
                         msgStatus += "Qtde Total não pode ser negativa, definida como 0;";
                     }
 
-                    if (!int.TryParse(quantidadeMinimaStr, out int quantidadeMinima))
+                    if (!double.TryParse(quantidadeMinimaStr, NumberStyles.Any, CultureInfo.InvariantCulture, out quantidadeMinima))
                     {
                         quantidadeMinima = 0;
                         msgStatus += "Qtde Mínima inválida, definida como 0;";
@@ -440,6 +475,17 @@ namespace ControleEstoque
                     {
                         quantidadeMinima = 0; // Evita valores negativos
                         msgStatus += "Qtde Mínima não pode ser negativa, definida como 0;";
+                    }
+
+                    if (!double.TryParse(pesoUnitarioGramaStr, NumberStyles.Any, CultureInfo.InvariantCulture, out pesoUnitarioGrama))
+                    {
+                        pesoUnitarioGrama = 0;
+                        msgStatus += "Peso Unitário inválido, definido como 0;";
+                    }
+                    if (pesoUnitarioGrama < 0)
+                    {
+                        pesoUnitarioGrama = 0; // Evita valores negativos
+                        msgStatus += "Peso Unitário não pode ser negativo, definido como 0;";
                     }
 
                     var produto = new Produto
@@ -453,6 +499,7 @@ namespace ControleEstoque
                         TipoUnidadeId = tipoUnidade.Id,
                         QuantidadeTotal = 0,
                         QuantidadeMinima = quantidadeMinima,
+                        PesoUnitarioGrama = pesoUnitarioGrama,
                         Ativo = true,
                         Alteracao = DateTime.Now,
                         Descricao = descricao
@@ -555,9 +602,10 @@ namespace ControleEstoque
                 headerRow.CreateCell(7).SetCellValue("Unidade");
                 headerRow.CreateCell(8).SetCellValue("Quantidade Total");
                 headerRow.CreateCell(9).SetCellValue("Quantidade Mínima");
-                headerRow.CreateCell(10).SetCellValue("Ativo");
-                headerRow.CreateCell(11).SetCellValue("Alteração");
-                headerRow.CreateCell(12).SetCellValue("Descrição");
+                headerRow.CreateCell(10).SetCellValue("Peso Por Unidade (grama)");
+                headerRow.CreateCell(11).SetCellValue("Ativo");
+                headerRow.CreateCell(12).SetCellValue("Alteração");
+                headerRow.CreateCell(13).SetCellValue("Descrição");
 
                 int rowIndex = 1;
                 foreach (var produto in produtos)
@@ -573,9 +621,10 @@ namespace ControleEstoque
                     row.CreateCell(7).SetCellValue(produto.TipoUnidadeNome);
                     row.CreateCell(8).SetCellValue(produto.QuantidadeTotal);
                     row.CreateCell(9).SetCellValue(produto.QuantidadeMinima);
-                    row.CreateCell(10).SetCellValue(produto.Ativo);
-                    row.CreateCell(11).SetCellValue(produto.Alteracao.ToString("dd/MM/yyyy HH:mm"));
-                    row.CreateCell(12).SetCellValue(produto.Descricao);
+                    row.CreateCell(10).SetCellValue((produto.PesoUnitarioGrama > 0 ? produto.PesoUnitarioGrama : 1));
+                    row.CreateCell(11).SetCellValue(produto.Ativo);
+                    row.CreateCell(12).SetCellValue(produto.Alteracao.ToString("dd/MM/yyyy HH:mm"));
+                    row.CreateCell(13).SetCellValue(produto.Descricao);
                 }
 
                 var saveFileDialog = new SaveFileDialog
@@ -605,6 +654,34 @@ namespace ControleEstoque
                 return; // Ignora evento durante atualização das abas
 
             CarregarProdutos();
+        }
+
+        private string NormalizarDecimal(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input)) return input;
+            int lastComma = input.LastIndexOf(',');
+            int lastDot = input.LastIndexOf('.');
+            if (lastComma == -1 && lastDot == -1)
+                return input; // só dígitos
+            if (lastComma == -1)
+                return input.Replace(",", "").Replace('.', '.'); // só ponto
+            if (lastDot == -1)
+                return input.Replace(".", "").Replace(',', '.'); // só vírgula
+            // ambos presentes
+            if (lastComma > lastDot)
+            {
+                // vírgula é o separador decimal
+                string semPonto = input.Substring(0, lastComma).Replace(".", "");
+                string decimalPart = input.Substring(lastComma + 1);
+                return semPonto + "." + decimalPart;
+            }
+            else
+            {
+                // ponto é o separador decimal
+                string semVirgula = input.Substring(0, lastDot).Replace(",", "");
+                string decimalPart = input.Substring(lastDot + 1);
+                return semVirgula + "." + decimalPart;
+            }
         }
     }
 }

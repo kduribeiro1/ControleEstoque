@@ -18,8 +18,9 @@ namespace ControleEstoque
         public TipoUnidade TipoUnidade { get; set; } = null!;
         public int FornecedorId { get; set; }
         public virtual Fornecedor Fornecedor { get; set; } = null!;
-        public int QuantidadeMinima { get; set; }
-        public int QuantidadeTotal { get; set; }
+        public double QuantidadeMinima { get; set; }
+        public double QuantidadeTotal { get; set; }
+        public double PesoUnitarioGrama { get; set; }
         public bool Ativo { get; set; }
         public DateTime Alteracao { get; set; }
         public string Descricao { get; set; } = string.Empty;
@@ -31,7 +32,7 @@ namespace ControleEstoque
         public int Id { get; set; }
         public int ProdutoId { get; set; }
         public virtual Produto Produto { get; set; } = null!;
-        public int Quantidade { get; set; }
+        public double Quantidade { get; set; }
         public DateTime DataEntradaSaida { get; set; }
         public bool Entrada { get; set; }
         public string Observacao { get; set; } = string.Empty;
@@ -60,7 +61,8 @@ namespace ControleEstoque
         [Key]
         public int Id { get; set; }
         public string Nome { get; set; } = string.Empty;
-        public int QuantidadeMinima { get; set; }
+        public double QuantidadeMinima { get; set; }
+        public double PesoUnitarioGrama { get; set; }
     }
 
     public class Fornecedor

@@ -34,12 +34,13 @@
             <TextBox x:Name="txtFiltroNome" Grid.Column="4" VerticalContentAlignment="Center" FontSize="14" />
         </Grid>
         <Grid Grid.Column="1" Grid.Row="3">
-            <ListView x:Name="lstTiposUnidades">
+            <ListView x:Name="lstTiposUnidades" ScrollViewer.VerticalScrollBarVisibility="Visible">
                 <ListView.View>
                     <GridView>
                         <GridViewColumn Header="Id" Width="60" DisplayMemberBinding="{Binding Id}" />
                         <GridViewColumn Header="Nome" DisplayMemberBinding="{Binding Nome}" />
                         <GridViewColumn Header="Quantidade Mínima" Width="150" DisplayMemberBinding="{Binding QuantidadeMinima}" />
+                        <GridViewColumn Header="Peso Por Unidade (grama)" Width="150" DisplayMemberBinding="{Binding PesoUnitarioGrama}" />
                     </GridView>
                 </ListView.View>
             </ListView>

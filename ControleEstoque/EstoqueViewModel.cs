@@ -18,7 +18,7 @@ namespace ControleEstoque
         public int FornecedorId { get; set; }
         public string FornecedorNome { get; set; } = string.Empty;
         public string Unidade { get; set; } = string.Empty;
-        public int Quantidade { get; set; }
+        public double Quantidade { get; set; }
         public DateTime DataEntradaSaida { get; set; }
         public string TipoMovimento { get; set; } = string.Empty;
         public string Observacao { get; set; } = string.Empty;

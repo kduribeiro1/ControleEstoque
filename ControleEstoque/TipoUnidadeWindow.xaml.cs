@@ -12,6 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Text.RegularExpressions;
+using System.Globalization;
 
 namespace ControleEstoque
 {
@@ -29,6 +30,7 @@ namespace ControleEstoque
             this.Title = "Cadastro de Tipo de Unidade";
             lblTitulo.Content = "Cadastro de Tipo de Unidade";
             DataObject.AddPastingHandler(txtQtdeAviso, TxtQtdeAviso_Pasting);
+            DataObject.AddPastingHandler(txtPesoUnitarioGrama, TxtPesoUnitarioGrama_Pasting);
         }
 
         // Construtor para edição
@@ -44,6 +46,7 @@ namespace ControleEstoque
         {
             txtNome.Text = tipoUnidade.Nome;
             txtQtdeAviso.Text = tipoUnidade.QuantidadeMinima.ToString();
+            txtPesoUnitarioGrama.Text = tipoUnidade.PesoUnitarioGrama.ToString();
         }
 
         private void BtnSalvar_Click(object sender, RoutedEventArgs e)
@@ -54,13 +57,35 @@ namespace ControleEstoque
                 return;
             }
 
-            int qtdeAviso = 0;
-            if (!string.IsNullOrWhiteSpace(txtQtdeAviso.Text))
+            double qtdeAviso = 0;
+            double pesoUnitarioGrama = 1;
+
+            string qtdeAvisoText = txtQtdeAviso.Text.Trim();
+            string pesoUnitarioText = txtPesoUnitarioGrama.Text.Trim();
+
+            qtdeAvisoText = NormalizarDecimal(qtdeAvisoText);
+            pesoUnitarioText = NormalizarDecimal(pesoUnitarioText);
+
+            if (!string.IsNullOrWhiteSpace(qtdeAvisoText))
             {
-                if (!int.TryParse(txtQtdeAviso.Text, out qtdeAviso) || qtdeAviso < 0)
+                if (!double.TryParse(qtdeAvisoText, NumberStyles.Any, CultureInfo.InvariantCulture, out qtdeAviso))
                 {
-                    MessageBox.Show("Informe um valor inteiro maior ou igual a zero para quantidade de aviso.", "Atenção", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
+                    qtdeAviso = 0;
+                }
+                if (qtdeAviso < 0)
+                {
+                    qtdeAviso = 0;
+                }
+            }
+            if (!string.IsNullOrWhiteSpace(pesoUnitarioText))
+            {
+                if (!double.TryParse(pesoUnitarioText, NumberStyles.Any, CultureInfo.InvariantCulture, out pesoUnitarioGrama))
+                {
+                    pesoUnitarioGrama = 1;
+                }
+                if (pesoUnitarioGrama <= 0)
+                {
+                    pesoUnitarioGrama = 1;
                 }
             }
 
@@ -79,6 +104,7 @@ namespace ControleEstoque
 
                 tipoUnidade.Nome = txtNome.Text.Trim();
                 tipoUnidade.QuantidadeMinima = qtdeAviso;
+                tipoUnidade.PesoUnitarioGrama = pesoUnitarioGrama;
                 if (!EstoqueEntityManager.LancarTipoUnidade(tipoUnidade))
                 {
                     return;
@@ -100,8 +126,8 @@ namespace ControleEstoque
 
         private void TxtQtdeAviso_PreviewTextInput(object sender, TextCompositionEventArgs e)
         {
-            // Permite apenas dígitos (0-9)
-            e.Handled = !Regex.IsMatch(e.Text, @"^\d+$");
+            // Permite apenas dígitos e um separador decimal (vírgula ou ponto)
+            e.Handled = !Regex.IsMatch(e.Text, @"^[\d,.]+$");
         }
 
         private void TxtQtdeAviso_Pasting(object sender, DataObjectPastingEventArgs e)
@@ -109,12 +135,62 @@ namespace ControleEstoque
             if (e.DataObject.GetDataPresent(typeof(string)))
             {
                 string texto = (string)e.DataObject.GetData(typeof(string));
-                if (!Regex.IsMatch(texto, @"^\d*$")) // Permite vazio ou só dígitos
+                // Permite vazio ou só dígitos e separador decimal
+                if (!Regex.IsMatch(texto, @"^[\d,.]*$"))
                     e.CancelCommand();
             }
             else
             {
                 e.CancelCommand();
+            }
+        }
+
+        private void TxtPesoUnitarioGrama_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            // Permite apenas dígitos e um separador decimal (vírgula ou ponto)
+            e.Handled = !Regex.IsMatch(e.Text, @"^[\d,.]+$");
+        }
+
+        private void TxtPesoUnitarioGrama_Pasting(object sender, DataObjectPastingEventArgs e)
+        {
+            if (e.DataObject.GetDataPresent(typeof(string)))
+            {
+                string texto = (string)e.DataObject.GetData(typeof(string));
+                // Permite vazio ou só dígitos e separador decimal
+                if (!Regex.IsMatch(texto, @"^[\d,.]*$"))
+                    e.CancelCommand();
+            }
+            else
+            {
+                e.CancelCommand();
+            }
+        }
+
+        private string NormalizarDecimal(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input)) return input;
+            int lastComma = input.LastIndexOf(',');
+            int lastDot = input.LastIndexOf('.');
+            if (lastComma == -1 && lastDot == -1)
+                return input; // só dígitos
+            if (lastComma == -1)
+                return input.Replace(",", "").Replace('.', '.'); // só ponto
+            if (lastDot == -1)
+                return input.Replace(".", "").Replace(',', '.'); // só vírgula
+            // ambos presentes
+            if (lastComma > lastDot)
+            {
+                // vírgula é o separador decimal
+                string semPonto = input.Substring(0, lastComma).Replace(".", "");
+                string decimalPart = input.Substring(lastComma + 1);
+                return semPonto + "." + decimalPart;
+            }
+            else
+            {
+                // ponto é o separador decimal
+                string semVirgula = input.Substring(0, lastDot).Replace(",", "");
+                string decimalPart = input.Substring(lastDot + 1);
+                return semVirgula + "." + decimalPart;
             }
         }
     }

@@ -3,6 +3,7 @@ using System;
 using ControleEstoque;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ControleEstoque.Migrations
 {
     [DbContext(typeof(EstoqueContext))]
-    partial class EstoqueContextModelSnapshot : ModelSnapshot
+    [Migration("20251015143132_addpesounitariograma")]
+    partial class addpesounitariograma
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.7");
@@ -103,7 +106,7 @@ namespace ControleEstoque.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<double>("PesoUnitarioGrama")
+                    b.Property<double?>("PesoUnitarioGrama")
                         .HasColumnType("REAL");
 
                     b.Property<double>("QuantidadeMinima")
@@ -138,7 +141,7 @@ namespace ControleEstoque.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<double>("PesoUnitarioGrama")
+                    b.Property<double?>("PesoUnitarioGrama")
                         .HasColumnType("REAL");
 
                     b.Property<double>("QuantidadeMinima")
